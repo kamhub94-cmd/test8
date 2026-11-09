@@ -136,13 +136,10 @@
                 </button>
             </form>
 
-            <!-- Szybkie logowanie testowe -->
-            <div class="mt-6 pt-5 border-t border-slate-800">
-                <p class="text-xs text-slate-400 mb-2.5 flex items-center justify-between gap-2">
-                    <span><i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Szybki wybór konta:</span>
-                    <span id="cloud-status-badge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400">Łączenie z Supabase...</span>
-                </p>
-                <div id="quick-login-list" class="flex flex-wrap gap-1.5"></div>
+            <!-- Status połączenia z chmurą (bez szybkiego logowania) -->
+            <div class="mt-6 pt-5 border-t border-slate-800 flex items-center justify-between gap-2">
+                <span class="text-xs text-slate-400"><i class="fa-solid fa-shield-halved text-emerald-400 mr-1.5"></i>Logowanie indywidualnym kontem gracza</span>
+                <span id="cloud-status-badge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400">Łączenie z Supabase...</span>
             </div>
         </div>
     </div>
@@ -240,7 +237,7 @@
         /********************************************************************
          * 1. WBUDOWANE DANE SUPABASE UŻYTKOWNIKA I DOMYŚLNY STAN BAZY
          ********************************************************************/
-        const STORAGE_KEY = 'fifa_arena_pro_state_v2';
+        const STORAGE_KEY = 'fifa_arena_pro_state_v3_clean';
         const SUPABASE_CFG_KEY = 'fifa_arena_supabase_cfg';
 
         // Twoje dane Supabase wbudowane na stałe w kodzie:
@@ -267,17 +264,19 @@
         let betSlip = []; // Kupon gracza (SOLO / COMBI)
         let slipStake = 50;
 
-        // Domyślne dane startowe, aby aplikacja od razu miała pełną funkcjonalność
+        // Czysty stan początkowy ze zresetowanymi statystykami do rozpoczęcia od zera ze znajomymi
         function getInitialState() {
             return {
+                stateVersion: 3,
                 config: {
                     oddsMargin: 0.94,          // Wskaźnik wysokości kursów (np. 0.94)
-                    matchWinnerTaxPct: 4,      // 4% od obstawionych punktów idzie do zwycięzcy meczu
-                    tournamentWinnerTaxPct: 1, // 1% z każdego meczu idzie do puli zwycięzcy turnieju
+                    matchWinnerTaxPct: 4,      // % podatku na zwycięzcę meczu (przy wpłacie I przy wypłacie)
+                    tournamentWinnerTaxPct: 1, // % podatku do puli zwycięzcy turnieju (przy wpłacie I przy wypłacie)
                     eloKFactor: 32,            // Bazowa waga zmiany punktów ELO
                     eloGainPct: 100,           // Mnożnik zyskiwanego ELO (%)
                     eloLossPct: 100,           // Mnożnik traconego ELO (%)
-                    globalBettingLocked: false // Ręczna blokada obstawiania LIVE
+                    globalBettingLocked: false,// Ręczna blokada obstawiania LIVE
+                    ownMatchBetRule: 'allow_all' // 'allow_all' (każdy na każdego) | 'self_only' (tylko na siebie) | 'block' (blokada własnego meczu)
                 },
                 users: [
                     {
@@ -286,17 +285,20 @@
                         password: '123',
                         name: 'Niemiec',
                         role: 'admin',
-                        elo: 1380,
-                        points: 2500,
-                        trophies: 2,
-                        currentStreak: 3,
-                        bestStreak: 5,
-                        seedMatches: 12,
-                        seedWins: 8,
-                        seedDraws: 2,
-                        seedLosses: 2,
-                        seedGoalsFor: 36,
-                        seedGoalsAgainst: 18
+                        elo: 1200,
+                        points: 1000,
+                        trophies: 0,
+                        currentTourneyStreak: 0,
+                        bestTourneyStreak: 0,
+                        currentStreak: 0,
+                        bestStreak: 0,
+                        seedMatches: 0,
+                        seedWins: 0,
+                        seedDraws: 0,
+                        seedLosses: 0,
+                        seedGoalsFor: 0,
+                        seedGoalsAgainst: 0,
+                        statsResetAt: 0
                     },
                     {
                         id: 'u_kamil',
@@ -304,17 +306,20 @@
                         password: '123',
                         name: 'Kamil',
                         role: 'player',
-                        elo: 1310,
-                        points: 1450,
-                        trophies: 1,
-                        currentStreak: 2,
-                        bestStreak: 4,
-                        seedMatches: 12,
-                        seedWins: 7,
-                        seedDraws: 2,
-                        seedLosses: 3,
-                        seedGoalsFor: 31,
-                        seedGoalsAgainst: 22
+                        elo: 1200,
+                        points: 1000,
+                        trophies: 0,
+                        currentTourneyStreak: 0,
+                        bestTourneyStreak: 0,
+                        currentStreak: 0,
+                        bestStreak: 0,
+                        seedMatches: 0,
+                        seedWins: 0,
+                        seedDraws: 0,
+                        seedLosses: 0,
+                        seedGoalsFor: 0,
+                        seedGoalsAgainst: 0,
+                        statsResetAt: 0
                     },
                     {
                         id: 'u_bartek',
@@ -322,17 +327,20 @@
                         password: '123',
                         name: 'Bartek',
                         role: 'player',
-                        elo: 1245,
-                        points: 1120,
-                        trophies: 1,
+                        elo: 1200,
+                        points: 1000,
+                        trophies: 0,
+                        currentTourneyStreak: 0,
+                        bestTourneyStreak: 0,
                         currentStreak: 0,
-                        bestStreak: 3,
-                        seedMatches: 10,
-                        seedWins: 5,
-                        seedDraws: 2,
-                        seedLosses: 3,
-                        seedGoalsFor: 25,
-                        seedGoalsAgainst: 21
+                        bestStreak: 0,
+                        seedMatches: 0,
+                        seedWins: 0,
+                        seedDraws: 0,
+                        seedLosses: 0,
+                        seedGoalsFor: 0,
+                        seedGoalsAgainst: 0,
+                        statsResetAt: 0
                     },
                     {
                         id: 'u_michal',
@@ -340,17 +348,20 @@
                         password: '123',
                         name: 'Michał',
                         role: 'player',
-                        elo: 1190,
-                        points: 980,
+                        elo: 1200,
+                        points: 1000,
                         trophies: 0,
-                        currentStreak: 1,
-                        bestStreak: 3,
-                        seedMatches: 10,
-                        seedWins: 4,
-                        seedDraws: 3,
-                        seedLosses: 3,
-                        seedGoalsFor: 22,
-                        seedGoalsAgainst: 22
+                        currentTourneyStreak: 0,
+                        bestTourneyStreak: 0,
+                        currentStreak: 0,
+                        bestStreak: 0,
+                        seedMatches: 0,
+                        seedWins: 0,
+                        seedDraws: 0,
+                        seedLosses: 0,
+                        seedGoalsFor: 0,
+                        seedGoalsAgainst: 0,
+                        statsResetAt: 0
                     },
                     {
                         id: 'u_dawid',
@@ -358,17 +369,20 @@
                         password: '123',
                         name: 'Dawid',
                         role: 'player',
-                        elo: 1140,
-                        points: 1050,
+                        elo: 1200,
+                        points: 1000,
                         trophies: 0,
+                        currentTourneyStreak: 0,
+                        bestTourneyStreak: 0,
                         currentStreak: 0,
-                        bestStreak: 2,
-                        seedMatches: 10,
-                        seedWins: 3,
-                        seedDraws: 2,
-                        seedLosses: 5,
-                        seedGoalsFor: 19,
-                        seedGoalsAgainst: 26
+                        bestStreak: 0,
+                        seedMatches: 0,
+                        seedWins: 0,
+                        seedDraws: 0,
+                        seedLosses: 0,
+                        seedGoalsFor: 0,
+                        seedGoalsAgainst: 0,
+                        statsResetAt: 0
                     },
                     {
                         id: 'u_piotrek',
@@ -376,117 +390,62 @@
                         password: '123',
                         name: 'Piotrek',
                         role: 'player',
-                        elo: 1085,
-                        points: 890,
+                        elo: 1200,
+                        points: 1000,
                         trophies: 0,
+                        currentTourneyStreak: 0,
+                        bestTourneyStreak: 0,
                         currentStreak: 0,
-                        bestStreak: 2,
-                        seedMatches: 10,
-                        seedWins: 2,
-                        seedDraws: 2,
-                        seedLosses: 6,
-                        seedGoalsFor: 15,
-                        seedGoalsAgainst: 29
+                        bestStreak: 0,
+                        seedMatches: 0,
+                        seedWins: 0,
+                        seedDraws: 0,
+                        seedLosses: 0,
+                        seedGoalsFor: 0,
+                        seedGoalsAgainst: 0,
+                        statsResetAt: 0
                     }
                 ],
-                tournaments: [
-                    {
-                        id: 't_demo_swiss',
-                        name: 'Weekendowy Puchar FIFA #1 (Szwajcar)',
-                        type: 'swiss', // 'league', 'league_cup', 'cup_elo', 'swiss'
-                        status: 'active', // 'active', 'completed', 'cancelled'
-                        createdAt: '2025-02-20 18:00',
-                        playerIds: ['u_niemiec', 'u_kamil', 'u_bartek', 'u_michal', 'u_dawid', 'u_piotrek'],
-                        totalRounds: 3,
-                        currentRound: 1,
-                        advancingCount: 4,
-                        swissFinalType: 'upper_lower_4', // 'classic_semis' | 'upper_lower_4'
-                        phase: 'regular', // 'regular' | 'playoffs' | 'completed'
-                        bettingMode: 'matches', // 'matches' (wybrane mecze) | 'outright' (cały turniej - zwycięzca)
-                        bettingLocked: false,
-                        jackpotPool: 25, // Pula 1% z każdego zakładu dla zwycięzcy turnieju
-                        winnerId: null,
-                        matches: [
-                            {
-                                id: 'm_sw_1',
-                                tournamentId: 't_demo_swiss',
-                                round: 1,
-                                stage: 'regular',
-                                stageLabel: 'Kolejka Szwajcarska 1 (Wg ELO: Najwyższy vs Najniższy)',
-                                homeId: 'u_niemiec',
-                                awayId: 'u_piotrek',
-                                homeScore: null,
-                                awayScore: null,
-                                status: 'scheduled', // 'scheduled' | 'finished' | 'cancelled'
-                                matchTaxPool: 12,
-                                bettingOpen: true,
-                                markets: { m1x2: true, totalGoals: true, playerGoals: true }
-                            },
-                            {
-                                id: 'm_sw_2',
-                                tournamentId: 't_demo_swiss',
-                                round: 1,
-                                stage: 'regular',
-                                stageLabel: 'Kolejka Szwajcarska 1 (Wg ELO: Najwyższy vs Najniższy)',
-                                homeId: 'u_kamil',
-                                awayId: 'u_dawid',
-                                homeScore: null,
-                                awayScore: null,
-                                status: 'scheduled',
-                                matchTaxPool: 8,
-                                bettingOpen: true,
-                                markets: { m1x2: true, totalGoals: true, playerGoals: true }
-                            },
-                            {
-                                id: 'm_sw_3',
-                                tournamentId: 't_demo_swiss',
-                                round: 1,
-                                stage: 'regular',
-                                stageLabel: 'Kolejka Szwajcarska 1 (Wg ELO: Najwyższy vs Najniższy)',
-                                homeId: 'u_bartek',
-                                awayId: 'u_michal',
-                                homeScore: null,
-                                awayScore: null,
-                                status: 'scheduled',
-                                matchTaxPool: 0,
-                                bettingOpen: true,
-                                markets: { m1x2: true, totalGoals: true, playerGoals: true }
-                            }
-                        ]
-                    }
-                ],
-                historicalMatches: [
-                    { id: 'hm_1', date: '2025-02-14 20:15', tournamentName: 'Sparing Wieczorny', homeId: 'u_niemiec', awayId: 'u_kamil', homeScore: 4, awayScore: 2, eloDiff: 14 },
-                    { id: 'hm_2', date: '2025-02-15 21:00', tournamentName: 'Sparing Wieczorny', homeId: 'u_bartek', awayId: 'u_piotrek', homeScore: 5, awayScore: 1, eloDiff: 11 },
-                    { id: 'hm_3', date: '2025-02-16 19:40', tournamentName: 'Liga Domowa', homeId: 'u_niemiec', awayId: 'u_dawid', homeScore: 6, awayScore: 0, eloDiff: 10 },
-                    { id: 'hm_4', date: '2025-02-17 22:10', tournamentName: 'Liga Domowa', homeId: 'u_kamil', awayId: 'u_michal', homeScore: 3, awayScore: 3, eloDiff: -3 }
-                ],
-                bets: [
-                    {
-                        id: 'bet_demo_1',
-                        userId: 'u_kamil',
-                        type: 'SOLO',
-                        createdAt: '2025-02-20 18:15',
-                        stake: 100,
-                        totalOdds: 1.52,
-                        potentialWin: 144,
-                        matchTax: 4,
-                        tourneyTax: 1,
-                        status: 'pending', // 'pending' | 'won' | 'lost' | 'cancelled'
-                        selections: [
-                            {
-                                kind: 'match',
-                                tournamentId: 't_demo_swiss',
-                                matchId: 'm_sw_1',
-                                marketLabel: '1X2: Wygrana Niemiec',
-                                code: '1X2_1',
-                                odds: 1.52
-                            }
-                        ]
-                    }
-                ],
-                transfers: []
+                tournaments: [],
+                historicalMatches: [],
+                bets: [],
+                transfers: [],
+                balanceLogs: [],
+                adminLogs: []
             };
+        }
+
+        function ensureStateIntegrity(st) {
+            if (!st || typeof st !== 'object') return getInitialState();
+            if (!st.stateVersion) st.stateVersion = 3;
+            if (!st.config) st.config = {};
+            if (st.config.oddsMargin === undefined) st.config.oddsMargin = 0.94;
+            if (st.config.matchWinnerTaxPct === undefined) st.config.matchWinnerTaxPct = 4;
+            if (st.config.tournamentWinnerTaxPct === undefined) st.config.tournamentWinnerTaxPct = 1;
+            if (st.config.eloKFactor === undefined) st.config.eloKFactor = 32;
+            if (st.config.eloGainPct === undefined) st.config.eloGainPct = 100;
+            if (st.config.eloLossPct === undefined) st.config.eloLossPct = 100;
+            if (st.config.globalBettingLocked === undefined) st.config.globalBettingLocked = false;
+            if (st.config.ownMatchBetRule === undefined) st.config.ownMatchBetRule = 'allow_all';
+
+            if (!Array.isArray(st.users)) st.users = [];
+            st.users.forEach(u => {
+                if (u.currentTourneyStreak === undefined) u.currentTourneyStreak = 0;
+                if (u.bestTourneyStreak === undefined) u.bestTourneyStreak = u.trophies > 0 ? 1 : 0;
+                if (u.statsResetAt === undefined) u.statsResetAt = 0;
+            });
+
+            if (!Array.isArray(st.tournaments)) st.tournaments = [];
+            st.tournaments.forEach(t => {
+                if (!Array.isArray(t.byes)) t.byes = [];
+            });
+
+            if (!Array.isArray(st.historicalMatches)) st.historicalMatches = [];
+            if (!Array.isArray(st.bets)) st.bets = [];
+            if (!Array.isArray(st.transfers)) st.transfers = [];
+            if (!Array.isArray(st.balanceLogs)) st.balanceLogs = [];
+            if (!Array.isArray(st.adminLogs)) st.adminLogs = [];
+            return st;
         }
 
         let appState = loadState();
@@ -497,15 +456,45 @@
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     if (parsed && Array.isArray(parsed.users) && parsed.users.length > 0 && Array.isArray(parsed.tournaments)) {
-                        return parsed;
+                        return ensureStateIntegrity(parsed);
                     }
                 }
             } catch (e) {
                 console.error('Błąd odczytu stanu:', e);
             }
-            const initial = getInitialState();
+            const initial = ensureStateIntegrity(getInitialState());
             localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
             return initial;
+        }
+
+        // Funkcje rejestrujące historię zmian salda oraz historię działań w panelu admina
+        function logBalanceChange(userId, delta, oldBalance, newBalance, category, description) {
+            if (!Array.isArray(appState.balanceLogs)) appState.balanceLogs = [];
+            const u = getUserById(userId);
+            appState.balanceLogs.unshift({
+                id: 'bl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                date: nowStr(),
+                userId,
+                userName: u ? u.name : 'Gracz',
+                delta: Math.round(delta),
+                oldBalance: Math.round(oldBalance),
+                newBalance: Math.round(newBalance),
+                category,
+                description
+            });
+            if (appState.balanceLogs.length > 300) appState.balanceLogs.length = 300;
+        }
+
+        function logAdminAction(category, description) {
+            if (!Array.isArray(appState.adminLogs)) appState.adminLogs = [];
+            appState.adminLogs.unshift({
+                id: 'al_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                date: nowStr(),
+                adminName: currentUser ? currentUser.name : 'Admin',
+                category,
+                description
+            });
+            if (appState.adminLogs.length > 300) appState.adminLogs.length = 300;
         }
 
         async function saveState(syncCloud = true) {
@@ -603,13 +592,21 @@
                     .single();
 
                 if (!error && data && data.data && Array.isArray(data.data.users)) {
+                    // Jeśli w chmurze Supabase jest jeszcze stara wersja demo (bez stateVersion >= 3),
+                    // automatycznie nadpisz ją czystym stanem startowym ze zresetowanymi statystykami
+                    if (!data.data.stateVersion || data.data.stateVersion < 3) {
+                        appState = getInitialState();
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                        await pushStateToSupabase();
+                        if (currentUser) renderAll();
+                        return;
+                    }
                     const incomingSig = JSON.stringify(data.data);
                     setCloudStatusUI('Chmura Supabase: Połączono (LIVE)', 'ok');
                     if (forceRender || incomingSig !== lastSyncedSignature) {
                         lastSyncedSignature = incomingSig;
-                        appState = data.data;
+                        appState = ensureStateIntegrity(data.data);
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-                        renderQuickLoginButtons();
                         if (currentUser) renderAll();
                     }
                 } else if (error && error.code === 'PGRST116') {
@@ -703,28 +700,14 @@
          * 4. LOGOWANIE I NAWIGACJA
          ********************************************************************/
         function renderQuickLoginButtons() {
-            const container = document.getElementById('quick-login-list');
-            if (!container) return;
-            container.innerHTML = appState.users.map(u => `
-                <button type="button" onclick="quickFillLogin('${u.login}', '${u.password}')" 
-                    class="px-2.5 py-1 rounded-lg text-xs font-medium border transition flex items-center gap-1.5 ${u.role === 'admin' ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25' : 'bg-slate-800/90 border-slate-700 text-slate-300 hover:border-emerald-500/50'}">
-                    <i class="fa-solid ${u.role === 'admin' ? 'fa-crown text-amber-400' : 'fa-user text-emerald-400'} text-[10px]"></i>
-                    ${u.name}
-                </button>
-            `).join('');
-        }
-
-        function quickFillLogin(login, pass) {
-            document.getElementById('login-username').value = login;
-            document.getElementById('login-password').value = pass;
-            handleLogin(new Event('submit'));
+            // Szybkie logowanie zostało usunięte zgodnie z życzeniem — każdy loguje się własnym loginem i hasłem
         }
 
         function handleLogin(e) {
             if (e && e.preventDefault) e.preventDefault();
             
             if (!appState || !Array.isArray(appState.users)) {
-                appState = getInitialState();
+                appState = ensureStateIntegrity(getInitialState());
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
             }
 
@@ -736,7 +719,7 @@
             );
 
             if (!user) {
-                showToast('Nieprawidłowy login lub hasło! Domyślne hasło testowe to: 123', 'error');
+                showToast('Nieprawidłowy login lub hasło!', 'error');
                 return;
             }
 
@@ -826,10 +809,11 @@
         }
 
         /********************************************************************
-         * 5. STATYSTYKI GRACZY I SILNIK KURSÓW (ELO + HISTORIA BRAMEK)
+         * 5. STATYSTYKI GRACZY I SILNIK KURSÓW (ELO + HISTORIA BRAMEK + H2H)
          ********************************************************************/
         function computePlayerFullStats(userId) {
             const u = getUserById(userId);
+            const resetTimestamp = Number(u.statsResetAt) || 0;
             let played = u.seedMatches || 0;
             let wins = u.seedWins || 0;
             let draws = u.seedDraws || 0;
@@ -838,11 +822,36 @@
             let goalsAgainst = u.seedGoalsAgainst || 0;
 
             const matchHistory = [];
+            const h2hMap = {}; // Statystyki bezpośrednie z każdym przeciwnikiem
+
+            const recordH2H = (oppId, myG, oppG) => {
+                if (!oppId || oppId === userId) return;
+                if (!h2hMap[oppId]) {
+                    h2hMap[oppId] = {
+                        oppId,
+                        oppName: getUserById(oppId).name,
+                        total: 0,
+                        wins: 0,
+                        draws: 0,
+                        losses: 0,
+                        gf: 0,
+                        ga: 0
+                    };
+                }
+                const rec = h2hMap[oppId];
+                rec.total++;
+                rec.gf += myG;
+                rec.ga += oppG;
+                if (myG > oppG) rec.wins++;
+                else if (myG === oppG) rec.draws++;
+                else rec.losses++;
+            };
 
             appState.tournaments.forEach(t => {
                 if (t.status === 'cancelled') return;
                 t.matches.forEach(m => {
                     if (m.status === 'finished' && m.homeScore !== null && m.awayScore !== null) {
+                        if (resetTimestamp > 0 && (m.finishedAt || 0) <= resetTimestamp) return;
                         if (m.homeId === userId || m.awayId === userId) {
                             const isHome = m.homeId === userId;
                             const myGoals = isHome ? Number(m.homeScore) : Number(m.awayScore);
@@ -855,6 +864,8 @@
                             if (myGoals > oppGoals) wins++;
                             else if (myGoals === oppGoals) draws++;
                             else losses++;
+
+                            recordH2H(oppId, myGoals, oppGoals);
 
                             matchHistory.push({
                                 id: m.id,
@@ -872,11 +883,14 @@
             });
 
             appState.historicalMatches.forEach(hm => {
+                if (resetTimestamp > 0 && (hm.createdAtMs || 0) <= resetTimestamp) return;
                 if (hm.homeId === userId || hm.awayId === userId) {
                     const isHome = hm.homeId === userId;
                     const myGoals = isHome ? Number(hm.homeScore) : Number(hm.awayScore);
                     const oppGoals = isHome ? Number(hm.awayScore) : Number(hm.homeScore);
                     const oppId = isHome ? hm.awayId : hm.homeId;
+
+                    recordH2H(oppId, myGoals, oppGoals);
 
                     matchHistory.push({
                         id: hm.id,
@@ -890,6 +904,41 @@
                     });
                 }
             });
+
+            // Obliczanie Ulubionego i Pechowego przeciwnika (tylko rywale, z którymi rozegrano minimum 5 meczów!)
+            const qualifiedH2H = Object.values(h2hMap).filter(r => r.total >= 5);
+            let favoriteOpponent = null;
+            let unluckyOpponent = null;
+
+            if (qualifiedH2H.length > 0) {
+                const sortedFav = [...qualifiedH2H].sort((a, b) => {
+                    const wrA = a.wins / a.total;
+                    const wrB = b.wins / b.total;
+                    if (wrB !== wrA) return wrB - wrA;
+                    if (b.wins !== a.wins) return b.wins - a.wins;
+                    return (b.gf - b.ga) - (a.gf - a.ga);
+                });
+                if (sortedFav[0].wins > 0) {
+                    favoriteOpponent = {
+                        ...sortedFav[0],
+                        winRatePct: Math.round((sortedFav[0].wins / sortedFav[0].total) * 100)
+                    };
+                }
+
+                const sortedUnlucky = [...qualifiedH2H].sort((a, b) => {
+                    const lrA = a.losses / a.total;
+                    const lrB = b.losses / b.total;
+                    if (lrB !== lrA) return lrB - lrA;
+                    if (b.losses !== a.losses) return b.losses - a.losses;
+                    return (a.gf - a.ga) - (b.gf - b.ga);
+                });
+                if (sortedUnlucky[0].losses > 0) {
+                    unluckyOpponent = {
+                        ...sortedUnlucky[0],
+                        lossRatePct: Math.round((sortedUnlucky[0].losses / sortedUnlucky[0].total) * 100)
+                    };
+                }
+            }
 
             const avgScored = played > 0 ? (goalsFor / played) : 2.3;
             const avgConceded = played > 0 ? (goalsAgainst / played) : 2.1;
@@ -907,8 +956,12 @@
                 avgConceded,
                 winRate,
                 trophies: u.trophies || 0,
+                currentTourneyStreak: u.currentTourneyStreak || 0,
+                bestTourneyStreak: u.bestTourneyStreak || 0,
                 currentStreak: u.currentStreak || 0,
                 bestStreak: u.bestStreak || 0,
+                favoriteOpponent,
+                unluckyOpponent,
                 matchHistory: matchHistory.reverse()
             };
         }
@@ -1060,26 +1113,61 @@
             );
         }
 
+        // System Szwajcarski:
+        // Gdy liczba graczy jest nieparzysta:
+        // - W 1. kolejce pauzuje gracz z NAJNIŻSZYM ELO, a pozostali są dobierani Najwyższe ELO vs Najniższe ELO.
+        // - W kolejnych kolejkach pauzuje najniżej sklasyfikowany gracz w tabeli (który jeszcze nie pauzował), a reszta gra Równy z Równym.
         function generateSwissRoundMatches(tournament, roundNumber) {
+            if (!Array.isArray(tournament.byes)) tournament.byes = [];
+            // Usuń ewentualny wcześniejszy wpis pauzy dla tej samej kolejki
+            tournament.byes = tournament.byes.filter(b => b.round !== roundNumber);
+
             const pairings = [];
             if (roundNumber === 1) {
                 const sortedByElo = [...tournament.playerIds]
                     .map(id => getUserById(id))
                     .sort((a, b) => b.elo - a.elo);
 
-                const n = sortedByElo.length;
+                let activePlayers = [...sortedByElo];
+                if (activePlayers.length % 2 !== 0) {
+                    // Pauzuje osoba z najniższym ELO
+                    const pausingPlayer = activePlayers.pop();
+                    tournament.byes.push({
+                        round: 1,
+                        playerId: pausingPlayer.id,
+                        reason: 'Najniższe ELO w 1. kolejce (nieparzysta liczba graczy)'
+                    });
+                }
+
+                const n = activePlayers.length;
                 const half = Math.floor(n / 2);
                 for (let i = 0; i < half; i++) {
                     pairings.push({
-                        homeId: sortedByElo[i].id,
-                        awayId: sortedByElo[n - 1 - i].id,
+                        homeId: activePlayers[i].id,
+                        awayId: activePlayers[n - 1 - i].id,
                         stageLabel: `Kolejka Szwajcarska 1 (Najwyższe ELO vs Najniższe ELO)`
                     });
                 }
             } else {
                 const standings = computeTournamentStandings(tournament, 'regular');
-                const ids = standings.map(s => s.id);
-                if (ids.length % 2 !== 0) ids.pop();
+                let ids = standings.map(s => s.id);
+                if (ids.length % 2 !== 0) {
+                    // Wybierz do pauzy osobę z dołu tabeli, która jeszcze nie pauzowała
+                    const alreadyPausedIds = tournament.byes.map(b => b.playerId);
+                    let pauseIdx = ids.length - 1;
+                    for (let i = ids.length - 1; i >= 0; i--) {
+                        if (!alreadyPausedIds.includes(ids[i])) {
+                            pauseIdx = i;
+                            break;
+                        }
+                    }
+                    const [pausedId] = ids.splice(pauseIdx, 1);
+                    tournament.byes.push({
+                        round: roundNumber,
+                        playerId: pausedId,
+                        reason: `Pauza w Kolejce ${roundNumber} (nieparzysta liczba graczy)`
+                    });
+                }
 
                 function findDisjointPairs(remaining) {
                     if (remaining.length === 0) return [];
@@ -1150,8 +1238,27 @@
             t.phase = 'playoffs';
             const now = Date.now();
             const openBet = t.bettingMode === 'matches' || t.bettingMode === 'both';
+            const advCount = Number(t.advancingCount) || 4;
 
-            if (t.swissFinalType === 'upper_lower_4' && standings.length >= 4) {
+            // Naprawa Bezpośredniego Finału (gdy wybrano TOP 2 lub jest mniej niż 4 graczy)
+            if (advCount === 2 || standings.length < 4) {
+                t.matches.push({
+                    id: `m_${t.id}_final_${now}`,
+                    tournamentId: t.id,
+                    round: 99,
+                    stage: 'playoff_final',
+                    stageLabel: 'WIELKI FINAŁ TURNIEJU (Bezpośredni Finał: 1. vs 2. miejsce)',
+                    homeId: standings[0].id,
+                    awayId: standings[1].id,
+                    homeScore: null,
+                    awayScore: null,
+                    status: 'scheduled',
+                    matchTaxPool: 0,
+                    bettingOpen: openBet,
+                    markets: { m1x2: true, totalGoals: true, playerGoals: true }
+                });
+                showToast(`Wygenerowano Bezpośredni Wielki Finał: ${standings[0].name} vs ${standings[1].name}!`, 'success');
+            } else if (t.swissFinalType === 'upper_lower_4' && standings.length >= 4) {
                 t.matches.push(
                     {
                         id: `m_${t.id}_ub_semi_${now}`,
@@ -1186,58 +1293,39 @@
                 );
                 showToast('Rozpoczęto Fazę Finałową: Górna (1 vs 2) oraz Dolna Drabinka (3 vs 4)!', 'success');
             } else {
-                if (standings.length >= 4) {
-                    t.matches.push(
-                        {
-                            id: `m_${t.id}_sf1_${now}`,
-                            tournamentId: t.id,
-                            round: 90,
-                            stage: 'playoff_sf1',
-                            stageLabel: 'Półfinał 1 (1. miejsce vs 4. miejsce)',
-                            homeId: standings[0].id,
-                            awayId: standings[3].id,
-                            homeScore: null,
-                            awayScore: null,
-                            status: 'scheduled',
-                            matchTaxPool: 0,
-                            bettingOpen: openBet,
-                            markets: { m1x2: true, totalGoals: true, playerGoals: true }
-                        },
-                        {
-                            id: `m_${t.id}_sf2_${now + 1}`,
-                            tournamentId: t.id,
-                            round: 90,
-                            stage: 'playoff_sf2',
-                            stageLabel: 'Półfinał 2 (2. miejsce vs 3. miejsce)',
-                            homeId: standings[1].id,
-                            awayId: standings[2].id,
-                            homeScore: null,
-                            awayScore: null,
-                            status: 'scheduled',
-                            matchTaxPool: 0,
-                            bettingOpen: openBet,
-                            markets: { m1x2: true, totalGoals: true, playerGoals: true }
-                        }
-                    );
-                    showToast('Wygenerowano Półfinały (1 vs 4 oraz 2 vs 3)!', 'success');
-                } else {
-                    t.matches.push({
-                        id: `m_${t.id}_final_${now}`,
+                t.matches.push(
+                    {
+                        id: `m_${t.id}_sf1_${now}`,
                         tournamentId: t.id,
-                        round: 99,
-                        stage: 'playoff_final',
-                        stageLabel: 'WIELKI FINAŁ TURNIEJU',
+                        round: 90,
+                        stage: 'playoff_sf1',
+                        stageLabel: 'Półfinał 1 (1. miejsce vs 4. miejsce)',
                         homeId: standings[0].id,
-                        awayId: standings[1].id,
+                        awayId: standings[3].id,
                         homeScore: null,
                         awayScore: null,
                         status: 'scheduled',
                         matchTaxPool: 0,
                         bettingOpen: openBet,
                         markets: { m1x2: true, totalGoals: true, playerGoals: true }
-                    });
-                    showToast('Wygenerowano Wielki Finał!', 'success');
-                }
+                    },
+                    {
+                        id: `m_${t.id}_sf2_${now + 1}`,
+                        tournamentId: t.id,
+                        round: 90,
+                        stage: 'playoff_sf2',
+                        stageLabel: 'Półfinał 2 (2. miejsce vs 3. miejsce)',
+                        homeId: standings[1].id,
+                        awayId: standings[2].id,
+                        homeScore: null,
+                        awayScore: null,
+                        status: 'scheduled',
+                        matchTaxPool: 0,
+                        bettingOpen: openBet,
+                        markets: { m1x2: true, totalGoals: true, playerGoals: true }
+                    }
+                );
+                showToast('Wygenerowano Półfinały (1 vs 4 oraz 2 vs 3)!', 'success');
             }
 
             saveState();
@@ -1349,18 +1437,39 @@
             const champ = getUserById(championUserId);
             champ.trophies = (champ.trophies || 0) + 1;
 
+            // Aktualizacja passy wygranych turniejów z rzędu
+            appState.users.forEach(u => {
+                if (u.id === championUserId) {
+                    u.currentTourneyStreak = (u.currentTourneyStreak || 0) + 1;
+                    if (u.currentTourneyStreak > (u.bestTourneyStreak || 0)) {
+                        u.bestTourneyStreak = u.currentTourneyStreak;
+                    }
+                } else if (tournament.playerIds.includes(u.id)) {
+                    u.currentTourneyStreak = 0;
+                }
+            });
+
             const jackpot = Math.round(tournament.jackpotPool || 0);
             if (jackpot > 0) {
-                champ.points = Math.round((champ.points || 0) + jackpot);
+                const oldPts = champ.points || 0;
+                champ.points = Math.round(oldPts + jackpot);
+                logBalanceChange(
+                    champ.id,
+                    jackpot,
+                    oldPts,
+                    champ.points,
+                    'Nagroda Turniejowa',
+                    `Zwycięstwo w turnieju "${tournament.name}" (pula ${appState.config.tournamentWinnerTaxPct}%)`
+                );
             }
 
             settleOutrightBets(tournament.id, championUserId);
 
-            showToast(`🏆 Turniej zakończony! Mistrzem zostaje ${champ.name} (+${jackpot} pkt z puli 1%)!`, 'success');
+            showToast(`🏆 Turniej zakończony! Mistrzem zostaje ${champ.name} (+${jackpot} pkt z puli ${appState.config.tournamentWinnerTaxPct}%)!`, 'success');
         }
 
         /********************************************************************
-         * 7. ROZLICZANIE MECZÓW, PUNKTÓW ELO, PODATKÓW 4%/1% I KUPONÓW
+         * 7. ROZLICZANIE MECZÓW, PUNKTÓW ELO, PODATKÓW I KUPONÓW
          ********************************************************************/
         function evaluateSelectionHit(sel, match, tournament) {
             if (sel.kind === 'outright') {
@@ -1422,8 +1531,74 @@
                 } else if (allResolved && !anyLost) {
                     bet.status = 'won';
                     const bettor = getUserById(bet.userId);
-                    bettor.points = Math.round((bettor.points || 0) + Number(bet.potentialWin));
-                    showToast(`Kupon gracza ${bettor.name} trafiony! Wygrana: +${bet.potentialWin} pkt`, 'success');
+                    const oldPts = bettor.points || 0;
+                    const winPts = Math.round(Number(bet.potentialWin));
+                    bettor.points = Math.round(oldPts + winPts);
+
+                    // Rozdzielenie dwóch podatków od WYPŁATY wygranej:
+                    // 1) Podatek na zwycięzcę meczu od wypłaty (payoutMatchTax)
+                    const payoutMatchTax = Math.round(Number(bet.payoutMatchTax || 0));
+                    if (payoutMatchTax > 0) {
+                        const matchSels = bet.selections.filter(s => s.kind === 'match');
+                        if (matchSels.length > 0) {
+                            const perMatchTax = payoutMatchTax / matchSels.length;
+                            matchSels.forEach(s => {
+                                const t = appState.tournaments.find(x => x.id === s.tournamentId);
+                                const m = t ? t.matches.find(x => x.id === s.matchId) : null;
+                                if (m && m.status === 'finished') {
+                                    m.matchTaxPool = (m.matchTaxPool || 0) + perMatchTax;
+                                    const hs = Number(m.homeScore);
+                                    const as = Number(m.awayScore);
+                                    const bonus = Math.round(perMatchTax);
+                                    if (bonus > 0) {
+                                        if (hs > as) {
+                                            const hu = getUserById(m.homeId);
+                                            const hOld = hu.points || 0;
+                                            hu.points = Math.round(hOld + bonus);
+                                            logBalanceChange(hu.id, bonus, hOld, hu.points, 'Podatek Meczowy (z wypłaty kuponu)', `Premia ${appState.config.matchWinnerTaxPct}% od wygranego kuponu gracza ${bettor.name}`);
+                                        } else if (as > hs) {
+                                            const au = getUserById(m.awayId);
+                                            const aOld = au.points || 0;
+                                            au.points = Math.round(aOld + bonus);
+                                            logBalanceChange(au.id, bonus, aOld, au.points, 'Podatek Meczowy (z wypłaty kuponu)', `Premia ${appState.config.matchWinnerTaxPct}% od wygranego kuponu gracza ${bettor.name}`);
+                                        } else if (t) {
+                                            t.jackpotPool = Math.round((t.jackpotPool || 0) + bonus);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    // 2) Podatek do puli turnieju od wypłaty (payoutTourneyTax)
+                    const payoutTourneyTax = Math.round(Number(bet.payoutTourneyTax || 0));
+                    if (payoutTourneyTax > 0 && bet.selections.length > 0) {
+                        const perSelTourneyTax = payoutTourneyTax / bet.selections.length;
+                        bet.selections.forEach(s => {
+                            const t = appState.tournaments.find(x => x.id === s.tournamentId);
+                            if (t) {
+                                const bonus = Math.round(perSelTourneyTax);
+                                t.jackpotPool = Math.round((t.jackpotPool || 0) + bonus);
+                                // Jeśli turniej właśnie się zakończył i ma już mistrza, dopisz podatek bezpośrednio mistrzowi
+                                if (t.status === 'completed' && t.winnerId && bonus > 0) {
+                                    const champ = getUserById(t.winnerId);
+                                    const cOld = champ.points || 0;
+                                    champ.points = Math.round(cOld + bonus);
+                                    logBalanceChange(champ.id, bonus, cOld, champ.points, 'Podatek Turniejowy (z wypłaty kuponu)', `Dopłata ${appState.config.tournamentWinnerTaxPct}% z wygranego kuponu w turnieju "${t.name}"`);
+                                }
+                            }
+                        });
+                    }
+
+                    logBalanceChange(
+                        bettor.id,
+                        winPts,
+                        oldPts,
+                        bettor.points,
+                        'Wygrana na Bukmacherce',
+                        `Wygrany kupon ${bet.type} (Kurs: ${bet.totalOdds}, Stawka: ${bet.stake} pkt, Wypłata netto: ${winPts} pkt)`
+                    );
+                    showToast(`Kupon gracza ${bettor.name} trafiony! Wygrana netto: +${winPts} pkt`, 'success');
                 }
             });
         }
@@ -1454,6 +1629,7 @@
             m.homeScore = hs;
             m.awayScore = as;
             m.status = 'finished';
+            m.finishedAt = Date.now();
             m.bettingOpen = false;
 
             const homeUser = getUserById(m.homeId);
@@ -1491,18 +1667,26 @@
                 }
 
                 const matchBonus = Math.round(m.matchTaxPool || 0);
+                const matchTaxPct = appState.config.matchWinnerTaxPct;
                 if (matchBonus > 0) {
                     if (hs > as) {
-                        homeUser.points = Math.round((homeUser.points || 0) + matchBonus);
-                        showToast(`${homeUser.name} otrzymuje +${matchBonus} pkt premii z podatku bukmacherskiego (4%) za wygrany mecz!`, 'info');
+                        const oldPts = homeUser.points || 0;
+                        homeUser.points = Math.round(oldPts + matchBonus);
+                        logBalanceChange(homeUser.id, matchBonus, oldPts, homeUser.points, 'Premia Meczowa (z wpłat)', `Wygrany mecz z ${awayUser.name} (podatek ${matchTaxPct}%)`);
+                        showToast(`${homeUser.name} otrzymuje +${matchBonus} pkt premii z podatku bukmacherskiego (${matchTaxPct}%) za wygrany mecz!`, 'info');
                     } else if (as > hs) {
-                        awayUser.points = Math.round((awayUser.points || 0) + matchBonus);
-                        showToast(`${awayUser.name} otrzymuje +${matchBonus} pkt premii z podatku bukmacherskiego (4%) za wygrany mecz!`, 'info');
+                        const oldPts = awayUser.points || 0;
+                        awayUser.points = Math.round(oldPts + matchBonus);
+                        logBalanceChange(awayUser.id, matchBonus, oldPts, awayUser.points, 'Premia Meczowa (z wpłat)', `Wygrany mecz z ${homeUser.name} (podatek ${matchTaxPct}%)`);
+                        showToast(`${awayUser.name} otrzymuje +${matchBonus} pkt premii z podatku bukmacherskiego (${matchTaxPct}%) za wygrany mecz!`, 'info');
                     } else {
                         t.jackpotPool = Math.round((t.jackpotPool || 0) + matchBonus);
                     }
                 }
             }
+
+            // Najpierw rozlicz kupony meczowe (dzięki temu podatek od wypłaty zasili pulę turnieju przed ewentualnym finałem)
+            reevaluateAllPendingBets();
 
             if (t.type === 'league') {
                 const rem = t.matches.filter(x => x.status === 'scheduled');
@@ -1516,6 +1700,7 @@
 
             checkAndAdvancePlayoffs(t);
             reevaluateAllPendingBets();
+            logAdminAction('Wynik Meczu', `Zapisano wynik meczu w "${t.name}": ${homeUser.name} ${hs}:${as} ${awayUser.name}`);
             saveState();
             renderAll();
             showToast(`Zapisano wynik meczu: ${homeUser.name} ${hs}:${as} ${awayUser.name}`, 'success');
@@ -1536,10 +1721,14 @@
                 if (bet.status === 'pending' && bet.selections.some(s => s.matchId === matchId)) {
                     bet.status = 'cancelled';
                     const u = getUserById(bet.userId);
-                    u.points = Math.round((u.points || 0) + Number(bet.stake));
+                    const oldPts = u.points || 0;
+                    const refund = Math.round(Number(bet.stake));
+                    u.points = Math.round(oldPts + refund);
+                    logBalanceChange(u.id, refund, oldPts, u.points, 'Zwrot Kuponu', `Zwrot stawki za anulowany mecz (${getUserById(m.homeId).name} vs ${getUserById(m.awayId).name})`);
                 }
             });
 
+            logAdminAction('Anulowanie Meczu', `Anulowano mecz ${getUserById(m.homeId).name} vs ${getUserById(m.awayId).name} w turnieju "${t.name}"`);
             saveState();
             renderAll();
             showToast('Mecz został anulowany, a powiązane nierozliczone zakłady zwrócone graczom.', 'info');
@@ -1555,10 +1744,14 @@
                 if (bet.status === 'pending' && bet.selections.some(s => s.tournamentId === tournamentId)) {
                     bet.status = 'cancelled';
                     const u = getUserById(bet.userId);
-                    u.points = Math.round((u.points || 0) + Number(bet.stake));
+                    const oldPts = u.points || 0;
+                    const refund = Math.round(Number(bet.stake));
+                    u.points = Math.round(oldPts + refund);
+                    logBalanceChange(u.id, refund, oldPts, u.points, 'Zwrot Kuponu', `Zwrot stawki za anulowany turniej "${t.name}"`);
                 }
             });
 
+            logAdminAction('Anulowanie Turnieju', `Anulowano cały turniej "${t.name}"`);
             saveState();
             renderAll();
             showToast(`Turniej "${t.name}" został anulowany. Nierozliczone zakłady zostały zwrócone.`, 'info');
@@ -1621,6 +1814,9 @@
             const sender = getUserById(currentUser.id);
             const receiver = getUserById(recipientId);
 
+            const senderOld = sender.points;
+            const receiverOld = receiver.points;
+
             sender.points -= amount;
             receiver.points += amount;
 
@@ -1632,6 +1828,9 @@
                 amount,
                 note
             });
+
+            logBalanceChange(sender.id, -amount, senderOld, sender.points, 'Przelew Wychodzący', `Przelew do gracza ${receiver.name}: "${note}"`);
+            logBalanceChange(receiver.id, amount, receiverOld, receiver.points, 'Przelew Przychodzący', `Przelew od gracza ${sender.name}: "${note}"`);
 
             closeModal();
             saveState();
@@ -1719,6 +1918,8 @@
             const canStartPlayoffs = (t.type === 'swiss' || t.type === 'league_cup') && t.status === 'active' && t.phase === 'regular' && pendingRegular.length === 0 && (t.type !== 'swiss' || t.currentRound >= t.totalRounds);
 
             const playoffMatches = t.matches.filter(m => m.stage !== 'regular');
+            const tourneyTaxPct = appState.config.tournamentWinnerTaxPct;
+            const byesList = Array.isArray(t.byes) ? t.byes : [];
 
             container.innerHTML = `
                 <!-- Przycisk wyboru turnieju -->
@@ -1755,7 +1956,7 @@
 
                             ${canStartPlayoffs ? `
                                 <button onclick="startPlayoffPhase('${t.id}')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold text-xs shadow-lg flex items-center gap-2">
-                                    <i class="fa-solid fa-trophy"></i> Rozpocznij Fazę Finałową (TOP ${t.advancingCount})
+                                    <i class="fa-solid fa-trophy"></i> Rozpocznij Fazę Finałową (${Number(t.advancingCount) === 2 ? 'Bezpośredni Finał TOP 2' : 'TOP ' + t.advancingCount})
                                 </button>
                             ` : ''}
                         </div>
@@ -1769,7 +1970,7 @@
                             <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${badge.cls}">${badge.label}</span>
                             ${t.type === 'swiss' ? `
                                 <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                                    Kolejka: ${t.currentRound} / ${t.totalRounds} • Awans: TOP ${t.advancingCount} (${t.swissFinalType === 'upper_lower_4' ? 'Górna + Dolna Drabinka 4 os.' : 'Półfinały + Finał'})
+                                    Kolejka: ${t.currentRound} / ${t.totalRounds} • Awans: TOP ${t.advancingCount} (${Number(t.advancingCount) === 2 ? 'Bezpośredni Finał' : (t.swissFinalType === 'upper_lower_4' ? 'Górna + Dolna Drabinka 4 os.' : 'Półfinały + Finał')})
                                 </span>
                             ` : ''}
                             ${t.status === 'completed' && t.winnerId ? `
@@ -1788,7 +1989,7 @@
 
                     <div class="flex items-center gap-4">
                         <div class="bg-slate-900/90 border border-amber-500/30 rounded-xl px-4 py-2 text-right">
-                            <div class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">Pula dla Zwycięzcy Turnieju (1%)</div>
+                            <div class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">Pula dla Zwycięzcy Turnieju (${tourneyTaxPct}%)</div>
                             <div class="text-lg font-extrabold text-white"><i class="fa-solid fa-sack-dollar text-amber-400 mr-1"></i>${Math.round(t.jackpotPool || 0)} pkt</div>
                         </div>
                         <button onclick="switchMainTab('bookmaker')" class="px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition">
@@ -1875,6 +2076,19 @@
                                     <span><i class="fa-solid fa-calendar-days text-emerald-400 mr-2"></i>Mecze Turniejowe</span>
                                     <span class="text-xs font-normal text-slate-400">Rozegrano: ${regularMatches.filter(m => m.status === 'finished').length} / ${regularMatches.length}</span>
                                 </h3>
+                                ${byesList.length > 0 ? `
+                                    <div class="mb-4 space-y-1.5">
+                                        ${byesList.map(b => {
+                                            const bp = getUserById(b.playerId);
+                                            return `
+                                                <div class="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-center justify-between">
+                                                    <span><i class="fa-solid fa-mug-hot mr-1.5"></i><strong>Pauza w Kolejce ${b.round}:</strong> ${bp.name} (${Math.round(bp.elo)} ELO)</span>
+                                                    <span class="text-[10px] text-amber-400/80">${b.reason}</span>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                ` : ''}
                                 <div class="space-y-3">
                                     ${regularMatches.map(m => renderMatchRowCard(t, m, isAdmin)).join('')}
                                 </div>
@@ -1890,6 +2104,7 @@
             const away = getUserById(m.awayId);
             const isFinished = m.status === 'finished';
             const isCancelled = m.status === 'cancelled';
+            const matchTaxPct = appState.config.matchWinnerTaxPct;
 
             return `
                 <div class="p-3.5 rounded-xl bg-slate-900/90 border ${isFinished ? 'border-emerald-500/30' : (isCancelled ? 'border-rose-500/30 opacity-60' : 'border-slate-800')} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1897,8 +2112,8 @@
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400">${m.stageLabel || 'Kolejka ' + m.round}</span>
                             ${m.matchTaxPool > 0 ? `
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30" title="Premia 4% z zakładów dla zwycięzcy tego meczu">
-                                    <i class="fa-solid fa-coins mr-1"></i>Pula meczu (4%): +${Math.round(m.matchTaxPool)} pkt
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30" title="Premia ${matchTaxPct}% z zakładów dla zwycięzcy tego meczu">
+                                    <i class="fa-solid fa-coins mr-1"></i>Pula meczu (${matchTaxPct}%): +${Math.round(m.matchTaxPool)} pkt
                                 </span>
                             ` : ''}
                             ${isCancelled ? `<span class="text-[10px] font-bold text-rose-400">ANULOWANY</span>` : ''}
@@ -1975,10 +2190,100 @@
             return betSlip.some(s => (s.matchId === matchOrTourneyId || s.tournamentId === matchOrTourneyId) && s.code === code);
         }
 
+        // Wyliczanie tych samych dwóch podatków (na mecz oraz na turniej) PRZY WPŁACIE i PRZY WYPŁACIE
+        function computeSlipNumbers(stakeVal) {
+            const stake = Math.max(0, Math.floor(Number(stakeVal) || 0));
+            const totalOdds = betSlip.length > 0 ? Number(betSlip.reduce((acc, s) => acc * Number(s.odds), 1).toFixed(2)) : 0;
+            const matchTaxPct = Number(appState.config.matchWinnerTaxPct) ?? 4;
+            const tourneyTaxPct = Number(appState.config.tournamentWinnerTaxPct) ?? 1;
+
+            const hasMatchSelections = betSlip.some(s => s.kind === 'match');
+
+            // 1. Podatki PRZY WPŁACIE (od postawionej sumy):
+            // Jeśli kupon dotyczy meczu, pobierany jest podatek na mecz + podatek na turniej.
+            // Jeśli kupon dotyczy wyłącznie Zwycięzcy Turnieju, pobierany jest podatek na turniej.
+            const stakeMatchTaxPts = hasMatchSelections ? Math.round(stake * (matchTaxPct / 100)) : 0;
+            const stakeTourneyTaxPts = Math.round(stake * (tourneyTaxPct / 100));
+            const netStake = Math.max(0, stake - stakeMatchTaxPts - stakeTourneyTaxPts);
+
+            // Kwota wygranej przed podatkiem od wypłaty:
+            const grossWin = Math.round(netStake * totalOdds);
+
+            // 2. Te same dwa podatki PRZY WYPŁACIE (od wygranej sumy):
+            const payoutMatchTaxPts = hasMatchSelections ? Math.round(grossWin * (matchTaxPct / 100)) : 0;
+            const payoutTourneyTaxPts = Math.round(grossWin * (tourneyTaxPct / 100));
+            const potentialWin = Math.max(0, grossWin - payoutMatchTaxPts - payoutTourneyTaxPts);
+
+            return {
+                stake,
+                totalOdds,
+                hasMatchSelections,
+                matchTaxPct,
+                tourneyTaxPct,
+                stakeMatchTaxPts,
+                stakeTourneyTaxPts,
+                netStake,
+                grossWin,
+                payoutMatchTaxPts,
+                payoutTourneyTaxPts,
+                potentialWin
+            };
+        }
+
+        // Funkcja aktualizująca na żywo wartości podatków i wygranej bez przeładowania DOM inputa (naprawia klawiaturę na telefonie)
+        function updateSlipStakeLive(rawVal) {
+            slipStake = Number(rawVal) || 0;
+            const calc = computeSlipNumbers(slipStake);
+            const elStakeMatchTax = document.getElementById('slip-stake-match-tax-val');
+            const elStakeTourneyTax = document.getElementById('slip-stake-tourney-tax-val');
+            const elGrossWin = document.getElementById('slip-gross-win-val');
+            const elPayoutMatchTax = document.getElementById('slip-payout-match-tax-val');
+            const elPayoutTourneyTax = document.getElementById('slip-payout-tourney-tax-val');
+            const elPotWin = document.getElementById('slip-potential-win-val');
+
+            if (elStakeMatchTax) elStakeMatchTax.textContent = `${calc.stakeMatchTaxPts} pkt`;
+            if (elStakeTourneyTax) elStakeTourneyTax.textContent = `${calc.stakeTourneyTaxPts} pkt`;
+            if (elGrossWin) elGrossWin.textContent = `${calc.grossWin} pkt`;
+            if (elPayoutMatchTax) elPayoutMatchTax.textContent = `${calc.payoutMatchTaxPts} pkt`;
+            if (elPayoutTourneyTax) elPayoutTourneyTax.textContent = `${calc.payoutTourneyTaxPts} pkt`;
+            if (elPotWin) elPotWin.textContent = `${calc.potentialWin} pkt`;
+        }
+
+        function isSelectionAllowedForPlayer(selObj, m) {
+            const rule = appState.config.ownMatchBetRule || 'allow_all';
+            if (selObj.kind !== 'match' || !m) return { allowed: true };
+            const isParticipant = m.homeId === currentUser.id || m.awayId === currentUser.id;
+            if (!isParticipant || rule === 'allow_all') return { allowed: true };
+
+            if (rule === 'block') {
+                return { allowed: false, reason: 'Nie możesz obstawiać meczu, w którym sam bierzesz udział!' };
+            }
+            if (rule === 'self_only') {
+                const isHome = m.homeId === currentUser.id;
+                const allowedCode = isHome ? '1X2_1' : '1X2_2';
+                const allowedGoalsPrefix = isHome ? 'HOME_OVER_' : 'AWAY_OVER_';
+                if (selObj.code === allowedCode || selObj.code.startsWith(allowedGoalsPrefix) || selObj.code.startsWith('TOT_OVER_')) {
+                    return { allowed: true };
+                }
+                return { allowed: false, reason: 'We własnym meczu możesz obstawiać wyłącznie na samego siebie!' };
+            }
+            return { allowed: true };
+        }
+
         function toggleSelectionOnSlip(selObj) {
             if (appState.config.globalBettingLocked) {
                 showToast('Obstawianie jest aktualnie zablokowane przez Administratora (trwa mecz LIVE)!', 'error');
                 return;
+            }
+
+            if (selObj.kind === 'match') {
+                const t = appState.tournaments.find(x => x.id === selObj.tournamentId);
+                const m = t ? t.matches.find(x => x.id === selObj.matchId) : null;
+                const check = isSelectionAllowedForPlayer(selObj, m);
+                if (!check.allowed) {
+                    showToast(check.reason, 'error');
+                    return;
+                }
             }
 
             const existingIdx = betSlip.findIndex(s =>
@@ -2012,7 +2317,8 @@
                 showToast('Dodaj przynajmniej jedno zdarzenie do kuponu!', 'error');
                 return;
             }
-            const stake = Math.floor(Number(document.getElementById('slip-stake-input').value));
+            const inputEl = document.getElementById('slip-stake-input');
+            const stake = Math.floor(Number(inputEl ? inputEl.value : slipStake));
             if (isNaN(stake) || stake < 5) {
                 showToast('Minimalna stawka kuponu to 5 pkt.', 'error');
                 return;
@@ -2034,24 +2340,32 @@
                         showToast('Jeden z meczów na kuponie już się rozpoczął lub został zablokowany!', 'error');
                         return;
                     }
+                    const check = isSelectionAllowedForPlayer(sel, m);
+                    if (!check.allowed) {
+                        showToast(check.reason, 'error');
+                        return;
+                    }
                 }
             }
 
-            const totalOdds = Number(betSlip.reduce((acc, s) => acc * Number(s.odds), 1).toFixed(2));
-            const matchTaxPct = Number(appState.config.matchWinnerTaxPct) || 4;
-            const tourneyTaxPct = Number(appState.config.tournamentWinnerTaxPct) || 1;
-
-            const matchTaxPoints = Math.round(stake * (matchTaxPct / 100));
-            const tourneyTaxPoints = Math.round(stake * (tourneyTaxPct / 100));
-            const netStake = Math.max(1, stake - matchTaxPoints - tourneyTaxPoints);
-            const potentialWin = Math.round(netStake * totalOdds);
-
+            const calc = computeSlipNumbers(stake);
             const userObj = getUserById(currentUser.id);
+            const oldPts = userObj.points;
             userObj.points -= stake;
 
+            logBalanceChange(
+                userObj.id,
+                -stake,
+                oldPts,
+                userObj.points,
+                'Postawiony Kupon',
+                `Kupon ${betSlip.length === 1 ? 'SOLO' : 'COMBI (' + betSlip.length + ')'} po kursie ${calc.totalOdds} (Ew. wygrana netto: ${calc.potentialWin} pkt)`
+            );
+
+            // Rozdzielenie podatków PRZY WPŁACIE:
             const matchSelections = betSlip.filter(s => s.kind === 'match');
-            if (matchSelections.length > 0) {
-                const perMatchBonus = matchTaxPoints / matchSelections.length;
+            if (matchSelections.length > 0 && calc.stakeMatchTaxPts > 0) {
+                const perMatchBonus = calc.stakeMatchTaxPts / matchSelections.length;
                 matchSelections.forEach(s => {
                     const t = appState.tournaments.find(x => x.id === s.tournamentId);
                     if (t) {
@@ -2059,27 +2373,30 @@
                         if (m) m.matchTaxPool = (m.matchTaxPool || 0) + perMatchBonus;
                     }
                 });
-            } else {
-                const t = appState.tournaments.find(x => x.id === betSlip[0].tournamentId);
-                if (t) t.jackpotPool = (t.jackpotPool || 0) + matchTaxPoints;
             }
 
-            const perSelectionTourneyBonus = tourneyTaxPoints / betSlip.length;
-            betSlip.forEach(s => {
-                const t = appState.tournaments.find(x => x.id === s.tournamentId);
-                if (t) t.jackpotPool = (t.jackpotPool || 0) + perSelectionTourneyBonus;
-            });
+            if (calc.stakeTourneyTaxPts > 0 && betSlip.length > 0) {
+                const perSelectionTourneyBonus = calc.stakeTourneyTaxPts / betSlip.length;
+                betSlip.forEach(s => {
+                    const t = appState.tournaments.find(x => x.id === s.tournamentId);
+                    if (t) t.jackpotPool = (t.jackpotPool || 0) + perSelectionTourneyBonus;
+                });
+            }
 
             appState.bets.unshift({
                 id: 'bet_' + Date.now(),
+                createdAtMs: Date.now(),
                 userId: currentUser.id,
                 type: betSlip.length === 1 ? 'SOLO' : `COMBI (${betSlip.length})`,
                 createdAt: nowStr(),
                 stake,
-                totalOdds,
-                potentialWin,
-                matchTax: matchTaxPoints,
-                tourneyTax: tourneyTaxPoints,
+                totalOdds: calc.totalOdds,
+                grossWin: calc.grossWin,
+                potentialWin: calc.potentialWin,
+                matchTax: calc.stakeMatchTaxPts,
+                tourneyTax: calc.stakeTourneyTaxPts,
+                payoutMatchTax: calc.payoutMatchTaxPts,
+                payoutTourneyTax: calc.payoutTourneyTaxPts,
                 status: 'pending',
                 selections: [...betSlip]
             });
@@ -2087,7 +2404,7 @@
             betSlip = [];
             saveState();
             renderAll();
-            showToast(`Postawiono kupon za ${stake} pkt! Ew. wygrana: ${potentialWin} pkt`, 'success');
+            showToast(`Postawiono kupon za ${stake} pkt! Ew. wygrana netto: ${calc.potentialWin} pkt`, 'success');
         }
 
         function renderBookmakerTab() {
@@ -2095,14 +2412,7 @@
             const activeTournaments = appState.tournaments.filter(t => t.status === 'active');
             const isAdmin = currentUser.role === 'admin' || currentUser.login.toLowerCase() === 'niemiec';
 
-            const totalOdds = betSlip.length > 0 ? Number(betSlip.reduce((acc, s) => acc * Number(s.odds), 1).toFixed(2)) : 0;
-            const matchTaxPct = Number(appState.config.matchWinnerTaxPct) || 4;
-            const tourneyTaxPct = Number(appState.config.tournamentWinnerTaxPct) || 1;
-            const matchTaxPts = Math.round(slipStake * (matchTaxPct / 100));
-            const tourneyTaxPts = Math.round(slipStake * (tourneyTaxPct / 100));
-            const netStake = Math.max(0, slipStake - matchTaxPts - tourneyTaxPts);
-            const potentialWin = Math.round(netStake * totalOdds);
-
+            const calc = computeSlipNumbers(slipStake);
             const myBets = appState.bets.filter(b => b.userId === currentUser.id);
 
             container.innerHTML = `
@@ -2157,8 +2467,11 @@
                                             </div>
                                             <div class="text-right">
                                                 <div class="text-xs text-slate-400">Stawka: <strong class="text-white">${b.stake} pkt</strong> (Kurs: ${b.totalOdds})</div>
-                                                <div class="text-sm font-extrabold text-emerald-400">Ew. wygrana: ${b.potentialWin} pkt</div>
-                                                <div class="text-[10px] text-slate-500">Podatek: ${b.matchTax} pkt (mecz) + ${b.tourneyTax} pkt (turniej)</div>
+                                                <div class="text-sm font-extrabold text-emerald-400">Ew. wygrana netto: ${b.potentialWin} pkt</div>
+                                                <div class="text-[10px] text-slate-500">
+                                                    Wpłata: ${b.matchTax || 0} pkt (mecz) + ${b.tourneyTax || 0} pkt (turniej) •
+                                                    Wypłata: ${b.payoutMatchTax || 0} pkt (mecz) + ${b.payoutTourneyTax || 0} pkt (turniej)
+                                                </div>
                                             </div>
                                         </div>
                                     `).join('')}
@@ -2207,29 +2520,50 @@
                                     <div>
                                         <div class="flex justify-between text-xs mb-1">
                                             <span class="text-slate-400 font-semibold">Stawka kuponu (pkt):</span>
-                                            <button onclick="slipStake = Math.round(currentUser.points); renderBookmakerTab();" class="text-[11px] text-emerald-400 hover:underline font-bold">Va banque (${Math.round(currentUser.points)})</button>
+                                            <span class="text-[11px] text-slate-400">Dostępne: <strong class="text-emerald-400">${Math.round(currentUser.points)} pkt</strong></span>
                                         </div>
-                                        <input id="slip-stake-input" type="number" min="5" max="${Math.round(currentUser.points)}" value="${slipStake}"
-                                            oninput="slipStake = Number(this.value) || 0; renderBookmakerTab();"
+                                        <input id="slip-stake-input" type="number" inputmode="numeric" min="5" max="${Math.round(currentUser.points)}" value="${slipStake}"
+                                            oninput="updateSlipStakeLive(this.value)"
                                             class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white outline-none">
                                     </div>
 
                                     <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5 text-xs">
                                         <div class="flex justify-between">
                                             <span class="text-slate-400">Kurs całkowity:</span>
-                                            <span class="font-extrabold text-amber-400">${totalOdds}</span>
+                                            <span class="font-extrabold text-amber-400">${calc.totalOdds}</span>
                                         </div>
+                                        <div class="pt-1 border-t border-slate-800/80 text-[10px] font-bold uppercase text-slate-400">Podatki przy wpłacie (od stawki):</div>
+                                        ${calc.hasMatchSelections ? `
+                                            <div class="flex justify-between text-[11px]">
+                                                <span class="text-slate-400">• Na zwycięzcę meczu (${calc.matchTaxPct}%):</span>
+                                                <span id="slip-stake-match-tax-val" class="text-slate-300">${calc.stakeMatchTaxPts} pkt</span>
+                                            </div>
+                                        ` : ''}
                                         <div class="flex justify-between text-[11px]">
-                                            <span class="text-slate-400">Podatek na zwycięzcę meczu (${matchTaxPct}%):</span>
-                                            <span class="text-slate-300">${matchTaxPts} pkt</span>
+                                            <span class="text-slate-400">• Do puli turnieju (${calc.tourneyTaxPct}%):</span>
+                                            <span id="slip-stake-tourney-tax-val" class="text-slate-300">${calc.stakeTourneyTaxPts} pkt</span>
                                         </div>
+
+                                        <div class="pt-1 border-t border-slate-800/80 flex justify-between text-[11px]">
+                                            <span class="text-slate-400">Wygrana brutto (przed wypłatą):</span>
+                                            <span id="slip-gross-win-val" class="text-slate-200 font-semibold">${calc.grossWin} pkt</span>
+                                        </div>
+
+                                        <div class="text-[10px] font-bold uppercase text-slate-400">Podatki przy wypłacie (od wygranej):</div>
+                                        ${calc.hasMatchSelections ? `
+                                            <div class="flex justify-between text-[11px]">
+                                                <span class="text-slate-400">• Na zwycięzcę meczu (${calc.matchTaxPct}%):</span>
+                                                <span id="slip-payout-match-tax-val" class="text-slate-300">${calc.payoutMatchTaxPts} pkt</span>
+                                            </div>
+                                        ` : ''}
                                         <div class="flex justify-between text-[11px]">
-                                            <span class="text-slate-400">Podatek do puli turnieju (${tourneyTaxPct}%):</span>
-                                            <span class="text-slate-300">${tourneyTaxPts} pkt</span>
+                                            <span class="text-slate-400">• Do puli turnieju (${calc.tourneyTaxPct}%):</span>
+                                            <span id="slip-payout-tourney-tax-val" class="text-slate-300">${calc.payoutTourneyTaxPts} pkt</span>
                                         </div>
+
                                         <div class="flex justify-between pt-1.5 border-t border-slate-800 text-sm">
-                                            <span class="font-bold text-white">Ewentualna wygrana:</span>
-                                            <span class="font-extrabold text-emerald-400">${potentialWin} pkt</span>
+                                            <span class="font-bold text-white">Ewentualna wygrana netto:</span>
+                                            <span id="slip-potential-win-val" class="font-extrabold text-emerald-400">${calc.potentialWin} pkt</span>
                                         </div>
                                     </div>
 
@@ -2258,6 +2592,7 @@
 
             const showOutright = t.bettingMode === 'outright' || t.bettingMode === 'both';
             const showMatches = t.bettingMode === 'matches' || t.bettingMode === 'both';
+            const tourneyTaxPct = appState.config.tournamentWinnerTaxPct;
 
             let outrightHtml = '';
             if (showOutright) {
@@ -2267,10 +2602,13 @@
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <div>
                                 <span class="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                                    Zakład Długoterminowy (Kursy wg ELO)
+                                    Zakład Długoterminowy (Każdy może obstawiać każdego)
                                 </span>
                                 <h4 class="font-display font-bold text-base text-white mt-1">Kto wygra cały turniej: ${t.name}?</h4>
                             </div>
+                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                <i class="fa-solid fa-trophy mr-1"></i>Podatek do puli turnieju (${tourneyTaxPct}% wpłata + ${tourneyTaxPct}% wypłata) • Pula: +${Math.round(t.jackpotPool || 0)} pkt
+                            </span>
                         </div>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                             ${t.playerIds.map(pid => {
@@ -2290,7 +2628,7 @@
                                         odds: odd
                                     })})' class="odd-btn p-3 rounded-xl border border-slate-700 bg-slate-950/90 flex items-center justify-between text-xs ${selected ? 'selected' : 'text-white'}">
                                         <div class="text-left">
-                                            <div class="font-bold">${u.name}</div>
+                                            <div class="font-bold">${u.name} ${pid === currentUser.id ? '<span class="text-[10px] text-emerald-400">(Ty)</span>' : ''}</div>
                                             <div class="text-[10px] opacity-75">${Math.round(u.elo)} ELO</div>
                                         </div>
                                         <span class="font-extrabold text-sm ${selected ? 'text-slate-950' : 'text-amber-400'}">${odd}</span>
@@ -2319,7 +2657,7 @@
                             </h3>
                             <p class="text-xs text-slate-400">Kursy wyliczane z rankingu ELO oraz historycznej średniej bramek strzelonych/straconych.</p>
                         </div>
-                        <span class="text-xs font-bold text-amber-400">Pula 1%: ${Math.round(t.jackpotPool || 0)} pkt</span>
+                        <span class="text-xs font-bold text-amber-400">Pula turnieju (${tourneyTaxPct}%): ${Math.round(t.jackpotPool || 0)} pkt</span>
                     </div>
 
                     ${outrightHtml}
@@ -2334,10 +2672,14 @@
             const odds = calculateMatchOdds(m.homeId, m.awayId);
             const matchTitle = `${home.name} vs ${away.name}`;
             const mk = m.markets || { m1x2: true, totalGoals: true, playerGoals: true };
+            const isOwnMatch = m.homeId === currentUser.id || m.awayId === currentUser.id;
+            const rule = appState.config.ownMatchBetRule || 'allow_all';
+            const matchTaxPct = appState.config.matchWinnerTaxPct;
+            const tourneyTaxPct = appState.config.tournamentWinnerTaxPct;
 
             const btnHtml = (marketGroup, code, label, oddVal) => {
                 const selected = isSelectionInSlip(m.id, code);
-                const payload = JSON.stringify({
+                const selObj = {
                     kind: 'match',
                     tournamentId: t.id,
                     matchId: m.id,
@@ -2346,10 +2688,12 @@
                     marketLabel: `${matchTitle} — ${label}`,
                     code,
                     odds: oddVal
-                });
+                };
+                const check = isSelectionAllowedForPlayer(selObj, m);
+                const payload = JSON.stringify(selObj);
                 return `
-                    <button onclick='toggleSelectionOnSlip(${payload})' 
-                        class="odd-btn px-3 py-2 rounded-xl border border-slate-700/80 bg-slate-950/90 flex items-center justify-between text-xs ${selected ? 'selected' : 'text-slate-200'}">
+                    <button ${!check.allowed ? `disabled title="${check.reason}"` : `onclick='toggleSelectionOnSlip(${payload})'`} 
+                        class="odd-btn px-3 py-2 rounded-xl border border-slate-700/80 bg-slate-950/90 flex items-center justify-between text-xs ${selected ? 'selected' : 'text-slate-200'} ${!check.allowed ? 'opacity-40 cursor-not-allowed' : ''}">
                         <span class="truncate mr-1">${label}</span>
                         <span class="font-extrabold ${selected ? 'text-slate-950' : 'text-emerald-400'}">${oddVal}</span>
                     </button>
@@ -2357,7 +2701,7 @@
             };
 
             return `
-                <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+                <div class="p-4 rounded-2xl bg-slate-900/90 border ${isOwnMatch && rule === 'block' ? 'border-rose-500/30' : 'border-slate-800'} space-y-3">
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <div>
                             <span class="text-[10px] font-bold uppercase text-slate-400">${m.stageLabel || 'Kolejka ' + m.round}</span>
@@ -2367,9 +2711,20 @@
                                 ${away.name} <span class="text-xs text-slate-400 font-normal">(${Math.round(away.elo)} ELO, śr. ${odds.lambdaB} goli)</span>
                             </div>
                         </div>
-                        <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                            Premia 4% dla zwycięzcy meczu: +${Math.round(m.matchTaxPool || 0)} pkt
-                        </span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            ${isOwnMatch && rule === 'block' ? `
+                                <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                                    <i class="fa-solid fa-ban mr-1"></i>Własny mecz — obstawianie zablokowane
+                                </span>
+                            ` : (isOwnMatch && rule === 'self_only' ? `
+                                <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                                    <i class="fa-solid fa-user-check mr-1"></i>Własny mecz — możesz obstawić tylko na siebie
+                                </span>
+                            ` : '')}
+                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                Pula meczu (${matchTaxPct}%): +${Math.round(m.matchTaxPool || 0)} pkt • Turniej (${tourneyTaxPct}%)
+                            </span>
+                        </div>
                     </div>
 
                     ${mk.m1x2 ? `
@@ -2432,9 +2787,24 @@
             const topTrophies = [...allStats].sort((a, b) => b.trophies - a.trophies || b.user.elo - a.user.elo);
 
             const bestStreakRecord = [...allStats].sort((a, b) => b.bestStreak - a.bestStreak)[0];
+            const bestTourneyStreakRecord = [...allStats].sort((a, b) => (b.bestTourneyStreak || 0) - (a.bestTourneyStreak || 0) || b.trophies - a.trophies)[0];
             const mostGoalsForRecord = [...allStats].sort((a, b) => b.goalsFor - a.goalsFor)[0];
             const mostGoalsAgainstRecord = [...allStats].sort((a, b) => b.goalsAgainst - a.goalsAgainst)[0];
             const mostTourneysRecord = topTrophies[0];
+
+            // Rekordy bukmacherskie (saldo): największa wygrana pkt, najwyższy trafiony kurs, największa przegrana pkt
+            const wonBets = appState.bets.filter(b => b.status === 'won');
+            const lostBets = appState.bets.filter(b => b.status === 'lost');
+
+            const biggestBetWin = wonBets.length > 0
+                ? [...wonBets].sort((a, b) => Number(b.potentialWin) - Number(a.potentialWin))[0]
+                : null;
+            const highestOddWin = wonBets.length > 0
+                ? [...wonBets].sort((a, b) => Number(b.totalOdds) - Number(a.totalOdds))[0]
+                : null;
+            const biggestBetLoss = lostBets.length > 0
+                ? [...lostBets].sort((a, b) => Number(b.stake) - Number(a.stake))[0]
+                : null;
 
             let biggestWin = { diff: -1, scoreStr: 'Brak', winnerName: '-', loserName: '-', tourney: '-' };
             const checkMatchForBiggestWin = (homeId, awayId, hs, as, label) => {
@@ -2523,16 +2893,28 @@
                     </div>
                 </div>
 
-                <!-- REKORDY OGÓLNE -->
+                <!-- REKORDY OGÓLNE (BOISKOWE + BUKMACHERSKIE) -->
                 <div class="glass-card rounded-2xl p-6 border border-slate-800">
                     <h3 class="font-display font-bold text-lg text-white mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-fire-flame-curved text-amber-400"></i> Rekordy Ogólne Wszech Czasów
+                        <i class="fa-solid fa-fire-flame-curved text-amber-400"></i> Rekordy Ogólne Wszech Czasów (Boisko i Bukmacher)
                     </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
-                            <div class="text-[11px] font-bold uppercase text-amber-400"><i class="fa-solid fa-fire mr-1"></i>Najdłuższa passa wygranych</div>
+                            <div class="text-[11px] font-bold uppercase text-amber-400"><i class="fa-solid fa-fire mr-1"></i>Najdłuższa passa wygranych meczów</div>
                             <div class="text-2xl font-extrabold text-white font-display">${bestStreakRecord ? bestStreakRecord.bestStreak : 0} meczów</div>
                             <div class="text-xs text-slate-400">Rekordzista: <strong class="text-white">${bestStreakRecord ? bestStreakRecord.user.name : '-'}</strong></div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                            <div class="text-[11px] font-bold uppercase text-yellow-400"><i class="fa-solid fa-trophy mr-1"></i>Passa wygranych turniejów z rzędu</div>
+                            <div class="text-2xl font-extrabold text-white font-display">${bestTourneyStreakRecord ? bestTourneyStreakRecord.bestTourneyStreak : 0} turnieje</div>
+                            <div class="text-xs text-slate-400">Rekordzista: <strong class="text-white">${bestTourneyStreakRecord ? bestTourneyStreakRecord.user.name : '-'}</strong></div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                            <div class="text-[11px] font-bold uppercase text-purple-400"><i class="fa-solid fa-crown mr-1"></i>Najwięcej wygranych turniejów</div>
+                            <div class="text-2xl font-extrabold text-white font-display">${mostTourneysRecord ? mostTourneysRecord.trophies : 0} pucharów</div>
+                            <div class="text-xs text-slate-400">Dominator: <strong class="text-white">${mostTourneysRecord ? mostTourneysRecord.user.name : '-'}</strong></div>
                         </div>
 
                         <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
@@ -2553,10 +2935,22 @@
                             <div class="text-xs text-slate-400">Gracz: <strong class="text-white">${mostGoalsAgainstRecord ? mostGoalsAgainstRecord.user.name : '-'}</strong></div>
                         </div>
 
-                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
-                            <div class="text-[11px] font-bold uppercase text-purple-400"><i class="fa-solid fa-crown mr-1"></i>Najwięcej wygranych turniejów</div>
-                            <div class="text-2xl font-extrabold text-white font-display">${mostTourneysRecord ? mostTourneysRecord.trophies : 0} pucharów</div>
-                            <div class="text-xs text-slate-400">Dominator: <strong class="text-white">${mostTourneysRecord ? mostTourneysRecord.user.name : '-'}</strong></div>
+                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-1">
+                            <div class="text-[11px] font-bold uppercase text-emerald-400"><i class="fa-solid fa-sack-dollar mr-1"></i>Największa wygrana punktów (Saldo)</div>
+                            <div class="text-2xl font-extrabold text-emerald-400 font-display">${biggestBetWin ? `+${Math.round(biggestBetWin.potentialWin)} pkt` : 'Brak'}</div>
+                            <div class="text-xs text-slate-400">Gracz: <strong class="text-white">${biggestBetWin ? getUserById(biggestBetWin.userId).name : '-'}</strong> ${biggestBetWin ? `(Stawka: ${biggestBetWin.stake} pkt)` : ''}</div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-indigo-500/30 space-y-1">
+                            <div class="text-[11px] font-bold uppercase text-indigo-400"><i class="fa-solid fa-chart-line mr-1"></i>Najwyższy wygrany kurs (Saldo)</div>
+                            <div class="text-2xl font-extrabold text-indigo-300 font-display">${highestOddWin ? `@${Number(highestOddWin.totalOdds).toFixed(2)}` : 'Brak'}</div>
+                            <div class="text-xs text-slate-400">Gracz: <strong class="text-white">${highestOddWin ? getUserById(highestOddWin.userId).name : '-'}</strong> ${highestOddWin ? `(Wygrana: +${highestOddWin.potentialWin} pkt)` : ''}</div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-rose-500/30 space-y-1">
+                            <div class="text-[11px] font-bold uppercase text-rose-400"><i class="fa-solid fa-arrow-trend-down mr-1"></i>Największa przegrana punktów (Saldo)</div>
+                            <div class="text-2xl font-extrabold text-rose-400 font-display">${biggestBetLoss ? `-${Math.round(biggestBetLoss.stake)} pkt` : 'Brak'}</div>
+                            <div class="text-xs text-slate-400">Gracz: <strong class="text-white">${biggestBetLoss ? getUserById(biggestBetLoss.userId).name : '-'}</strong> ${biggestBetLoss ? `(Kurs: @${biggestBetLoss.totalOdds})` : ''}</div>
                         </div>
                     </div>
                 </div>
@@ -2646,6 +3040,55 @@
                         </div>
                     </div>
 
+                    <!-- Ulubiony oraz Pechowy Przeciwnik (minimum 5 rozegranych meczów bezpośrednich) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/30 flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-[11px] font-bold uppercase text-emerald-400 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-face-smile-wink"></i> Ulubiony przeciwnik (min. 5 meczów)
+                                </div>
+                                ${st.favoriteOpponent ? `
+                                    <div class="text-lg font-extrabold text-white mt-1">${st.favoriteOpponent.oppName}</div>
+                                    <div class="text-xs text-slate-400 mt-0.5">
+                                        Bilans: <strong class="text-emerald-400">${st.favoriteOpponent.wins}W - ${st.favoriteOpponent.draws}R - ${st.favoriteOpponent.losses}P</strong> 
+                                        (${st.favoriteOpponent.total} meczów, bramki ${st.favoriteOpponent.gf}:${st.favoriteOpponent.ga})
+                                    </div>
+                                ` : `
+                                    <div class="text-sm font-bold text-slate-400 mt-1">Brak danych (wymagane min. 5 meczów z tym samym rywalem)</div>
+                                `}
+                            </div>
+                            ${st.favoriteOpponent ? `
+                                <div class="px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-right">
+                                    <div class="text-[10px] uppercase text-emerald-300 font-bold">% Wygranych</div>
+                                    <div class="text-xl font-extrabold text-emerald-400">${st.favoriteOpponent.winRatePct}%</div>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-rose-500/30 flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-[11px] font-bold uppercase text-rose-400 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-skull-crossbones"></i> Pechowy przeciwnik (min. 5 meczów)
+                                </div>
+                                ${st.unluckyOpponent ? `
+                                    <div class="text-lg font-extrabold text-white mt-1">${st.unluckyOpponent.oppName}</div>
+                                    <div class="text-xs text-slate-400 mt-0.5">
+                                        Bilans: <strong class="text-rose-400">${st.unluckyOpponent.wins}W - ${st.unluckyOpponent.draws}R - ${st.unluckyOpponent.losses}P</strong> 
+                                        (${st.unluckyOpponent.total} meczów, bramki ${st.unluckyOpponent.gf}:${st.unluckyOpponent.ga})
+                                    </div>
+                                ` : `
+                                    <div class="text-sm font-bold text-slate-400 mt-1">Brak danych (wymagane min. 5 meczów z tym samym rywalem)</div>
+                                `}
+                            </div>
+                            ${st.unluckyOpponent ? `
+                                <div class="px-3 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-right">
+                                    <div class="text-[10px] uppercase text-rose-300 font-bold">% Przegranych</div>
+                                    <div class="text-xl font-extrabold text-rose-400">${st.unluckyOpponent.lossRatePct}%</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
                     <div>
                         <h3 class="font-display font-bold text-base text-white mb-3 flex items-center gap-2">
                             <i class="fa-solid fa-clock-rotate-left text-emerald-400"></i> Historia Rozegranych Meczów (${st.matchHistory.length})
@@ -2687,7 +3130,7 @@
                 { id: 'tournaments', label: 'Kreator i Zarządzanie Turniejami', icon: 'fa-trophy' },
                 { id: 'bookmaker_cfg', label: 'Ustawienia Bukmachera i Kursów', icon: 'fa-sliders' },
                 { id: 'accounts', label: 'Konta Graczy (Login/Hasło/ELO/Pkt)', icon: 'fa-users-gear' },
-                { id: 'history', label: 'Historia Zakładów i Meczów (Import)', icon: 'fa-clock-rotate-left' },
+                { id: 'history', label: 'Historia Zakładów, Salda i Zmian Admina', icon: 'fa-clock-rotate-left' },
                 { id: 'cloud_guide', label: '🚀 Połącz Supabase + GitHub + Netlify', icon: 'fa-cloud-arrow-up' }
             ];
 
@@ -2750,12 +3193,12 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">Ile osób awansuje dalej</label>
-                                <select id="nt-advancing" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-emerald-400">
+                                <select id="nt-advancing" onchange="toggleAdvancingFinalTypeUI()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-emerald-400">
                                     <option value="2">TOP 2 (Bezpośredni Finał)</option>
                                     <option value="4" selected>TOP 4 (Faza Finałowa 4 os.)</option>
                                 </select>
                             </div>
-                            <div>
+                            <div id="nt-final-type-wrapper">
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">Wersja Fazy Finałowej (4 os.)</label>
                                 <select id="nt-final-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white">
                                     <option value="upper_lower_4" selected>Tryb 2: Górna (1v2) i Dolna Drabinka (3v4)</option>
@@ -2825,7 +3268,7 @@
                                     </div>
                                     <div class="text-xs text-slate-400 flex flex-wrap gap-2">
                                         <span>Mecze: ${t.matches.length}</span> •
-                                        <span>Pula 1%: ${Math.round(t.jackpotPool || 0)} pkt</span> •
+                                        <span>Pula (${appState.config.tournamentWinnerTaxPct}%): ${Math.round(t.jackpotPool || 0)} pkt</span> •
                                         <span>Tryb bukmachera: ${t.bettingMode === 'outright' ? 'Tylko Zwycięzca Turnieju' : (t.bettingMode === 'both' ? 'Połączony (Turniej + Mecze)' : 'Poszczególne mecze')}</span>
                                     </div>
                                     ${t.type === 'swiss' && t.status === 'active' ? `
@@ -2852,6 +3295,17 @@
                     </div>
                 </div>
             `;
+        }
+
+        function toggleAdvancingFinalTypeUI() {
+            const advSelect = document.getElementById('nt-advancing');
+            const wrapper = document.getElementById('nt-final-type-wrapper');
+            if (!advSelect || !wrapper) return;
+            if (Number(advSelect.value) === 2) {
+                wrapper.classList.add('opacity-40', 'pointer-events-none');
+            } else {
+                wrapper.classList.remove('opacity-40', 'pointer-events-none');
+            }
         }
 
         function toggleManualPairingUI() {
@@ -2998,6 +3452,7 @@
             manualPairingsTemp = [];
             appState.tournaments.unshift(newTourney);
             selectedTournamentId = newTourney.id;
+            logAdminAction('Nowy Turniej', `Utworzono turniej "${name}" (Format: ${type}, Graczy: ${checkedPlayers.length}, Awans: TOP ${advancingCount})`);
             saveState();
             switchMainTab('tournaments');
             showToast(`Utworzono turniej "${name}"!`, 'success');
@@ -3019,15 +3474,23 @@
                                 <label class="block text-slate-400 font-semibold mb-1">Wskaźnik wysokości kursów (np. 0.94 = 6% marży, 1.05 = kursy promocyjne)</label>
                                 <input id="cfg-margin" type="number" step="0.01" value="${cfg.oddsMargin}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold">
                             </div>
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                 <div>
-                                    <label class="block text-slate-400 font-semibold mb-1">Podatek na zwycięzcę meczu (%)</label>
+                                    <label class="block text-slate-400 font-semibold mb-1">Podatek na zwycięzcę meczu (% przy wpłacie I wypłacie)</label>
                                     <input id="cfg-match-tax" type="number" step="0.5" value="${cfg.matchWinnerTaxPct}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold">
                                 </div>
                                 <div>
-                                    <label class="block text-slate-400 font-semibold mb-1">Podatek do puli turnieju (%)</label>
+                                    <label class="block text-slate-400 font-semibold mb-1">Podatek na turniej (% przy wpłacie I wypłacie)</label>
                                     <input id="cfg-tourney-tax" type="number" step="0.5" value="${cfg.tournamentWinnerTaxPct}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-bold">
                                 </div>
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 font-semibold mb-1">Zasada obstawiania meczów, w których gracz sam uczestniczy</label>
+                                <select id="cfg-own-match-rule" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold">
+                                    <option value="allow_all" ${cfg.ownMatchBetRule === 'allow_all' ? 'selected' : ''}>Każdy może obstawiać każdego (brak blokady)</option>
+                                    <option value="self_only" ${cfg.ownMatchBetRule === 'self_only' ? 'selected' : ''}>We własnym meczu gracz może obstawić tylko na siebie</option>
+                                    <option value="block" ${cfg.ownMatchBetRule === 'block' ? 'selected' : ''}>Całkowita blokada obstawiania własnego meczu</option>
+                                </select>
                             </div>
                             <div class="grid grid-cols-3 gap-2">
                                 <div>
@@ -3117,12 +3580,19 @@
         }
 
         function saveBookmakerConfigFromAdmin() {
+            const oldCfg = { ...appState.config };
             appState.config.oddsMargin = Number(document.getElementById('cfg-margin').value) || 0.94;
-            appState.config.matchWinnerTaxPct = Number(document.getElementById('cfg-match-tax').value) || 4;
-            appState.config.tournamentWinnerTaxPct = Number(document.getElementById('cfg-tourney-tax').value) || 1;
+            appState.config.matchWinnerTaxPct = Number(document.getElementById('cfg-match-tax').value) ?? 4;
+            appState.config.tournamentWinnerTaxPct = Number(document.getElementById('cfg-tourney-tax').value) ?? 1;
+            appState.config.ownMatchBetRule = document.getElementById('cfg-own-match-rule').value || 'allow_all';
             appState.config.eloKFactor = Number(document.getElementById('cfg-elo-k').value) || 32;
             appState.config.eloGainPct = Number(document.getElementById('cfg-elo-gain').value) || 100;
             appState.config.eloLossPct = Number(document.getElementById('cfg-elo-loss').value) || 100;
+
+            logAdminAction(
+                'Konfiguracja Bukmachera/ELO',
+                `Zmieniono ustawienia: Marża ${oldCfg.oddsMargin}->${appState.config.oddsMargin}, Podatek meczowy (wpłata i wypłata) ${oldCfg.matchWinnerTaxPct}%->${appState.config.matchWinnerTaxPct}%, Podatek turniejowy (wpłata i wypłata) ${oldCfg.tournamentWinnerTaxPct}%->${appState.config.tournamentWinnerTaxPct}%, Zasada własnych meczów: ${appState.config.ownMatchBetRule}, ELO K=${appState.config.eloKFactor} (+${appState.config.eloGainPct}%/-${appState.config.eloLossPct}%)`
+            );
             saveState();
             renderAll();
             showToast('Zapisano nowe wskaźniki kursów, podatków i ELO!', 'success');
@@ -3172,74 +3642,99 @@
         function renderAdminAccountsSub(subContainer) {
             subContainer.innerHTML = `
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <div class="lg:col-span-4 glass-card rounded-2xl p-6 border border-emerald-500/30 space-y-4 h-fit">
-                        <h3 class="font-display font-bold text-lg text-white">
-                            <i class="fa-solid fa-user-plus text-emerald-400 mr-1.5"></i>Utwórz Konto dla Znajomego
-                        </h3>
-                        <div class="space-y-3 text-xs">
-                            <div>
-                                <label class="block text-slate-400 mb-1">Login do logowania</label>
-                                <input id="new-u-login" type="text" placeholder="np. Kuba" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 mb-1">Hasło</label>
-                                <input id="new-u-pass" type="text" value="123" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 mb-1">Wyświetlana nazwa gracza</label>
-                                <input id="new-u-name" type="text" placeholder="np. Kuba" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
+                    <div class="lg:col-span-4 space-y-6 h-fit">
+                        <div class="glass-card rounded-2xl p-6 border border-emerald-500/30 space-y-4">
+                            <h3 class="font-display font-bold text-lg text-white">
+                                <i class="fa-solid fa-user-plus text-emerald-400 mr-1.5"></i>Utwórz Konto dla Znajomego
+                            </h3>
+                            <div class="space-y-3 text-xs">
                                 <div>
-                                    <label class="block text-slate-400 mb-1">Startowe ELO</label>
-                                    <input id="new-u-elo" type="number" value="1200" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-indigo-300 font-bold">
+                                    <label class="block text-slate-400 mb-1">Login do logowania</label>
+                                    <input id="new-u-login" type="text" placeholder="np. Kuba" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
                                 </div>
                                 <div>
-                                    <label class="block text-slate-400 mb-1">Startowe Punkty</label>
-                                    <input id="new-u-pts" type="number" value="1000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold">
+                                    <label class="block text-slate-400 mb-1">Hasło</label>
+                                    <input id="new-u-pass" type="text" value="123" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
                                 </div>
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Wyświetlana nazwa gracza</label>
+                                    <input id="new-u-name" type="text" placeholder="np. Kuba" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-slate-400 mb-1">Startowe ELO</label>
+                                        <input id="new-u-elo" type="number" value="1200" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-indigo-300 font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 mb-1">Startowe Punkty</label>
+                                        <input id="new-u-pts" type="number" value="1000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold">
+                                    </div>
+                                </div>
+                                <button onclick="createPlayerAccountFromAdmin()" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold uppercase tracking-wider transition">
+                                    Dodaj Konto Gracza
+                                </button>
                             </div>
-                            <button onclick="createPlayerAccountFromAdmin()" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold uppercase tracking-wider transition">
-                                Dodaj Konto Gracza
+                        </div>
+
+                        <!-- Globalny reset wszystkich statystyk i turniejów -->
+                        <div class="glass-card rounded-2xl p-5 border border-rose-500/30 space-y-3">
+                            <h4 class="font-display font-bold text-sm text-rose-400 flex items-center gap-2">
+                                <i class="fa-solid fa-arrows-rotate"></i> Reset Całego Sezonu (Wszyscy Gracze)
+                            </h4>
+                            <p class="text-xs text-slate-400">Zeruje wszystkie dotychczasowe turnieje, mecze, kupony i przywraca wszystkim graczom 1200 ELO, 1000 pkt oraz 0 meczów/bramek.</p>
+                            <button onclick="openResetAllSeasonModal()" class="w-full py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-extrabold text-xs transition">
+                                <i class="fa-solid fa-broom mr-1.5"></i>Zresetuj Wszystkich Graczy i Turnieje
                             </button>
                         </div>
                     </div>
 
                     <div class="lg:col-span-8 glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
                         <h3 class="font-display font-bold text-lg text-white">
-                            <i class="fa-solid fa-users-gear text-amber-400 mr-1.5"></i>Edycja Kont Graczy (Login, Hasło, Nazwa, ELO, Punkty, Puchary)
+                            <i class="fa-solid fa-users-gear text-amber-400 mr-1.5"></i>Edycja Kont i Resetowanie Statystyk Graczy
                         </h3>
                         <div class="space-y-3">
                             ${appState.users.map(u => `
-                                <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 grid grid-cols-2 sm:grid-cols-7 gap-2 items-end text-xs">
-                                    <div>
-                                        <label class="text-[10px] text-slate-400 block">Login</label>
-                                        <input id="edit_login_${u.id}" type="text" value="${u.login}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-bold">
+                                <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2.5 text-xs">
+                                    <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 items-end">
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 block">Login</label>
+                                            <input id="edit_login_${u.id}" type="text" value="${u.login}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-bold">
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 block">Hasło</label>
+                                            <input id="edit_pass_${u.id}" type="text" value="${u.password}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white">
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 block">Nazwa</label>
+                                            <input id="edit_name_${u.id}" type="text" value="${u.name}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-bold">
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 block">ELO</label>
+                                            <input id="edit_elo_${u.id}" type="number" value="${Math.round(u.elo)}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-indigo-400 font-bold">
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 block">Saldo (Pkt)</label>
+                                            <input id="edit_pts_${u.id}" type="number" value="${Math.round(u.points)}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-emerald-400 font-bold">
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] text-slate-400 block">Puchary</label>
+                                            <input id="edit_trophies_${u.id}" type="number" value="${u.trophies || 0}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-amber-400 font-bold">
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label class="text-[10px] text-slate-400 block">Hasło</label>
-                                        <input id="edit_pass_${u.id}" type="text" value="${u.password}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white">
-                                    </div>
-                                    <div>
-                                        <label class="text-[10px] text-slate-400 block">Nazwa</label>
-                                        <input id="edit_name_${u.id}" type="text" value="${u.name}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-bold">
-                                    </div>
-                                    <div>
-                                        <label class="text-[10px] text-slate-400 block">ELO</label>
-                                        <input id="edit_elo_${u.id}" type="number" value="${Math.round(u.elo)}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-indigo-400 font-bold">
-                                    </div>
-                                    <div>
-                                        <label class="text-[10px] text-slate-400 block">Saldo (Pkt)</label>
-                                        <input id="edit_pts_${u.id}" type="number" value="${Math.round(u.points)}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-emerald-400 font-bold">
-                                    </div>
-                                    <div>
-                                        <label class="text-[10px] text-slate-400 block">Puchary</label>
-                                        <input id="edit_trophies_${u.id}" type="number" value="${u.trophies || 0}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-amber-400 font-bold">
-                                    </div>
-                                    <div class="flex gap-1">
-                                        <button onclick="saveUserEditFromAdmin('${u.id}')" class="flex-1 py-1.5 px-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold">
-                                            Zapisz
-                                        </button>
+                                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+                                        <span class="text-[11px] text-slate-400">
+                                            Statystyki gracza: <strong>${computePlayerFullStats(u.id).played} M</strong> • 
+                                            Bramki: <strong>${computePlayerFullStats(u.id).goalsFor}:${computePlayerFullStats(u.id).goalsAgainst}</strong> • 
+                                            Passa: <strong>${u.currentStreak || 0} (Max ${u.bestStreak || 0})</strong>
+                                        </span>
+                                        <div class="flex items-center gap-2">
+                                            <button onclick="openResetSinglePlayerModal('${u.id}')" class="py-1.5 px-3 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 font-bold transition flex items-center gap-1.5">
+                                                <i class="fa-solid fa-rotate-left"></i> Resetuj statystyki gracza
+                                            </button>
+                                            <button onclick="saveUserEditFromAdmin('${u.id}')" class="py-1.5 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold transition">
+                                                <i class="fa-solid fa-floppy-disk mr-1"></i> Zapisz zmiany
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             `).join('')}
@@ -3247,6 +3742,119 @@
                     </div>
                 </div>
             `;
+        }
+
+        function openResetSinglePlayerModal(userId) {
+            const u = getUserById(userId);
+            if (!u) return;
+            openModal(
+                `<i class="fa-solid fa-rotate-left text-rose-400 mr-2"></i>Resetowanie statystyk gracza: ${u.name}`,
+                `
+                <div class="space-y-3 text-xs text-slate-300">
+                    <p>Czy na pewno chcesz zresetować wszystkie statystyki gracza <strong class="text-white">${u.name}</strong> do stanu początkowego?</p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-400 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <li>Rozegrane mecze, zwycięstwa, remisy, porażki: <strong>0</strong></li>
+                        <li>Strzelone i stracone bramki oraz bilans H2H: <strong>0:0</strong></li>
+                        <li>Passa zwycięstw meczowych i turniejowych: <strong>0</strong></li>
+                        <li>Zdobyte puchary: <strong>0</strong></li>
+                    </ul>
+                    <label class="flex items-center gap-2 pt-1 cursor-pointer text-white font-semibold">
+                        <input id="reset-player-elo-pts-cb" type="checkbox" checked class="accent-emerald-500 w-4 h-4">
+                        Przywróć również domyślne ELO (1200) oraz Saldo (1000 pkt)
+                    </label>
+                </div>
+                `,
+                `
+                <button onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Anuluj</button>
+                <button onclick="executeResetSinglePlayerStats('${u.id}')" class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-extrabold">Tak, zresetuj gracza</button>
+                `
+            );
+        }
+
+        function executeResetSinglePlayerStats(userId) {
+            const u = getUserById(userId);
+            if (!u) return;
+            const resetEloAndPts = document.getElementById('reset-player-elo-pts-cb')?.checked;
+            const oldPts = u.points || 0;
+
+            u.trophies = 0;
+            u.currentStreak = 0;
+            u.bestStreak = 0;
+            u.currentTourneyStreak = 0;
+            u.bestTourneyStreak = 0;
+            u.seedMatches = 0;
+            u.seedWins = 0;
+            u.seedDraws = 0;
+            u.seedLosses = 0;
+            u.seedGoalsFor = 0;
+            u.seedGoalsAgainst = 0;
+            u.statsResetAt = Date.now();
+
+            // Usuń mecze archiwalne tego gracza
+            appState.historicalMatches = appState.historicalMatches.filter(hm => hm.homeId !== userId && hm.awayId !== userId);
+
+            if (resetEloAndPts) {
+                u.elo = 1200;
+                u.points = 1000;
+                if (oldPts !== 1000) {
+                    logBalanceChange(u.id, 1000 - oldPts, oldPts, 1000, 'Reset Statystyk Gracza', `Przywrócenie salda startowego 1000 pkt przez Admina`);
+                }
+            }
+
+            logAdminAction('Reset Statystyk Gracza', `Zresetowano wszystkie statystyki gracza ${u.name}${resetEloAndPts ? ' (wraz z ELO=1200 i Saldo=1000 pkt)' : ''}`);
+            closeModal();
+            saveState();
+            renderAll();
+            showToast(`Zresetowano wszystkie statystyki gracza ${u.name}!`, 'success');
+        }
+
+        function openResetAllSeasonModal() {
+            openModal(
+                `<i class="fa-solid fa-triangle-exclamation text-rose-400 mr-2"></i>Całkowity Reset Sezonu`,
+                `
+                <div class="space-y-3 text-xs text-slate-300">
+                    <p>Czy na pewno chcesz wyczyścić wszystkie dotychczasowe turnieje, mecze, kupony i zresetować statystyki <strong>wszystkich graczy</strong> (1200 ELO, 1000 pkt, 0 meczów)?</p>
+                    <p class="text-amber-300 font-semibold">Konta graczy (loginy i hasła) zostaną zachowane.</p>
+                </div>
+                `,
+                `
+                <button onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Anuluj</button>
+                <button onclick="executeResetAllSeason()" class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-extrabold">Tak, zresetuj cały sezon</button>
+                `
+            );
+        }
+
+        function executeResetAllSeason() {
+            appState.users.forEach(u => {
+                u.elo = 1200;
+                u.points = 1000;
+                u.trophies = 0;
+                u.currentStreak = 0;
+                u.bestStreak = 0;
+                u.currentTourneyStreak = 0;
+                u.bestTourneyStreak = 0;
+                u.seedMatches = 0;
+                u.seedWins = 0;
+                u.seedDraws = 0;
+                u.seedLosses = 0;
+                u.seedGoalsFor = 0;
+                u.seedGoalsAgainst = 0;
+                u.statsResetAt = Date.now();
+            });
+            appState.tournaments = [];
+            appState.historicalMatches = [];
+            appState.bets = [];
+            appState.transfers = [];
+            appState.balanceLogs = [];
+            appState.adminLogs = [];
+            selectedTournamentId = null;
+            betSlip = [];
+
+            logAdminAction('Reset Sezonu', 'Zresetowano wszystkie turnieje, kupony i statystyki wszystkich graczy do stanu początkowego.');
+            closeModal();
+            saveState();
+            renderAll();
+            showToast('Zresetowano wszystkie statystyki i turnieje! Możecie zaczynać od zera.', 'success');
         }
 
         function createPlayerAccountFromAdmin() {
@@ -3265,7 +3873,7 @@
                 return;
             }
 
-            appState.users.push({
+            const newUser = {
                 id: 'u_' + Date.now(),
                 login,
                 password,
@@ -3274,6 +3882,8 @@
                 elo,
                 points,
                 trophies: 0,
+                currentTourneyStreak: 0,
+                bestTourneyStreak: 0,
                 currentStreak: 0,
                 bestStreak: 0,
                 seedMatches: 0,
@@ -3282,7 +3892,11 @@
                 seedLosses: 0,
                 seedGoalsFor: 0,
                 seedGoalsAgainst: 0
-            });
+            };
+
+            appState.users.push(newUser);
+            logBalanceChange(newUser.id, points, 0, points, 'Utworzenie Konta', `Saldo startowe dla nowego gracza ${name}`);
+            logAdminAction('Nowe Konto Gracza', `Utworzono konto "${name}" (Login: ${login}, ELO: ${elo}, Saldo: ${points} pkt)`);
 
             saveState();
             renderAdminTab();
@@ -3292,12 +3906,50 @@
         function saveUserEditFromAdmin(userId) {
             const u = getUserById(userId);
             if (!u) return;
-            u.login = document.getElementById(`edit_login_${userId}`).value.trim() || u.login;
-            u.password = document.getElementById(`edit_pass_${userId}`).value.trim() || u.password;
-            u.name = document.getElementById(`edit_name_${userId}`).value.trim() || u.name;
-            u.elo = Number(document.getElementById(`edit_elo_${userId}`).value) || 1200;
-            u.points = Number(document.getElementById(`edit_pts_${userId}`).value) || 0;
-            u.trophies = Number(document.getElementById(`edit_trophies_${userId}`).value) || 0;
+
+            const oldLogin = u.login;
+            const oldPass = u.password;
+            const oldName = u.name;
+            const oldElo = Math.round(u.elo);
+            const oldPts = Math.round(u.points);
+            const oldTrophies = u.trophies || 0;
+
+            const newLogin = document.getElementById(`edit_login_${userId}`).value.trim() || u.login;
+            const newPass = document.getElementById(`edit_pass_${userId}`).value.trim() || u.password;
+            const newName = document.getElementById(`edit_name_${userId}`).value.trim() || u.name;
+            const newElo = Number(document.getElementById(`edit_elo_${userId}`).value) || 1200;
+            const newPts = Number(document.getElementById(`edit_pts_${userId}`).value) || 0;
+            const newTrophies = Number(document.getElementById(`edit_trophies_${userId}`).value) || 0;
+
+            const changes = [];
+            if (oldLogin !== newLogin) changes.push(`Login: ${oldLogin} -> ${newLogin}`);
+            if (oldName !== newName) changes.push(`Nazwa: ${oldName} -> ${newName}`);
+            if (oldPass !== newPass) changes.push(`Hasło: zmieniono (${oldPass} -> ${newPass})`);
+            if (oldElo !== Math.round(newElo)) changes.push(`ELO: ${oldElo} -> ${Math.round(newElo)}`);
+            if (oldPts !== Math.round(newPts)) changes.push(`Punkty: ${oldPts} -> ${Math.round(newPts)}`);
+            if (oldTrophies !== newTrophies) changes.push(`Puchary: ${oldTrophies} -> ${newTrophies}`);
+
+            u.login = newLogin;
+            u.password = newPass;
+            u.name = newName;
+            u.elo = newElo;
+            u.points = newPts;
+            u.trophies = newTrophies;
+
+            if (oldPts !== Math.round(newPts)) {
+                logBalanceChange(
+                    u.id,
+                    Math.round(newPts) - oldPts,
+                    oldPts,
+                    Math.round(newPts),
+                    'Korekta Admina',
+                    `Ręczna zmiana salda w Panelu Admina przez ${currentUser ? currentUser.name : 'Admina'}`
+                );
+            }
+
+            if (changes.length > 0) {
+                logAdminAction('Edycja Gracza', `Gracz ${u.name}: ${changes.join(', ')}`);
+            }
 
             saveState();
             renderAll();
@@ -3306,14 +3958,16 @@
 
         function renderAdminHistorySub(subContainer) {
             const userOptions = appState.users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+            const balanceLogs = Array.isArray(appState.balanceLogs) ? appState.balanceLogs : [];
+            const adminLogs = Array.isArray(appState.adminLogs) ? appState.adminLogs : [];
 
             subContainer.innerHTML = `
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div class="lg:col-span-5 glass-card rounded-2xl p-6 border border-emerald-500/30 space-y-4 h-fit">
                         <h3 class="font-display font-bold text-base text-white">
-                            <i class="fa-solid fa-database text-emerald-400 mr-1.5"></i>Dodaj Dawny Mecz (do wyliczania kursów na bramki)
+                            <i class="fa-solid fa-database text-emerald-400 mr-1.5"></i>Dodaj Dawny Mecz (do wyliczania kursów na bramki i H2H)
                         </h3>
-                        <p class="text-xs text-slate-400">Każdy dodany tu wynik z poprzednich spotkań automatycznie przelicza średnią strzelanych i traconych bramek graczy oraz kursy na Powyżej 1 / 2 / 3 / 4 / 5 goli.</p>
+                        <p class="text-xs text-slate-400">Każdy dodany tu wynik z poprzednich spotkań automatycznie przelicza średnią strzelanych i traconych bramek, bilans bezpośredni H2H (ulubiony/pechowy rywal) oraz kursy bramkowe.</p>
                         
                         <div class="grid grid-cols-2 gap-2 text-xs">
                             <div>
@@ -3342,7 +3996,7 @@
                             ${appState.historicalMatches.map((hm, idx) => `
                                 <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
                                     <span><strong>${getUserById(hm.homeId).name}</strong> ${hm.homeScore}:${hm.awayScore} <strong>${getUserById(hm.awayId).name}</strong></span>
-                                    <button onclick="appState.historicalMatches.splice(${idx}, 1); saveState(); renderAdminTab();" class="text-rose-400"><i class="fa-solid fa-trash"></i></button>
+                                    <button onclick="removeHistoricalMatchFromAdmin(${idx})" class="text-rose-400"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             `).join('')}
                         </div>
@@ -3352,7 +4006,7 @@
                         <h3 class="font-display font-bold text-base text-white">
                             <i class="fa-solid fa-scroll text-amber-400 mr-1.5"></i>Pełna Historia Obstawień Graczy (Kto, Kiedy, Za ile, Na co)
                         </h3>
-                        <div class="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+                        <div class="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
                             ${appState.bets.map(b => {
                                 const bettor = getUserById(b.userId);
                                 return `
@@ -3369,7 +4023,8 @@
                                             </div>
                                         </div>
                                         <div class="text-right space-y-1">
-                                            <div>Stawka: <strong>${b.stake} pkt</strong> → Wygrana: <strong class="text-emerald-400">${b.potentialWin} pkt</strong></div>
+                                            <div>Stawka: <strong>${b.stake} pkt</strong> → Wygrana netto: <strong class="text-emerald-400">${b.potentialWin} pkt</strong></div>
+                                            <div class="text-[10px] text-slate-500">Podatki: ${b.matchTax || 0} (mecz) / ${b.tourneyTax || 0} (turniej) / ${b.winTax || 0} (wygrana)</div>
                                             ${b.status === 'pending' ? `
                                                 <button onclick="cancelSingleBetByAdmin('${b.id}')" class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-400 text-[10px] font-bold">
                                                     Anuluj i zwróć stawkę
@@ -3382,7 +4037,75 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- NOWA SEKCJA: HISTORIA ZMIAN SALDA (W TYM PRZELEWY) ORAZ HISTORIA WSZYSTKICH ZMIAN W PANELU ADMINA -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Historia wszystkich zmian salda i przelewów graczy -->
+                    <div class="glass-card rounded-2xl p-6 border border-emerald-500/30 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-display font-bold text-base text-white flex items-center gap-2">
+                                <i class="fa-solid fa-money-bill-transfer text-emerald-400"></i> Historia Wszystkich Zmian Salda i Przelewów (${balanceLogs.length})
+                            </h3>
+                        </div>
+                        ${balanceLogs.length === 0 ? `<p class="text-xs text-slate-500">Brak zarejestrowanych zmian salda.</p>` : `
+                            <div class="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                                ${balanceLogs.map(log => `
+                                    <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 text-xs">
+                                        <div class="space-y-0.5">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-extrabold text-white">${log.userName}</span>
+                                                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold">${log.category}</span>
+                                                <span class="text-[10px] text-slate-500">${log.date}</span>
+                                            </div>
+                                            <div class="text-slate-300 text-[11px]">${log.description}</div>
+                                        </div>
+                                        <div class="text-right whitespace-nowrap">
+                                            <div class="font-extrabold text-sm ${log.delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                                                ${log.delta >= 0 ? '+' + log.delta : log.delta} pkt
+                                            </div>
+                                            <div class="text-[10px] text-slate-500">${log.oldBalance} → ${log.newBalance} pkt</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Historia wszystkich zmian w Panelu Admina (ELO, punkty, puchary, hasła, ustawienia) -->
+                    <div class="glass-card rounded-2xl p-6 border border-amber-500/30 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-display font-bold text-base text-white flex items-center gap-2">
+                                <i class="fa-solid fa-user-shield text-amber-400"></i> Historia Wszystkich Zmian w Panelu Admina (${adminLogs.length})
+                            </h3>
+                        </div>
+                        ${adminLogs.length === 0 ? `<p class="text-xs text-slate-500">Brak zarejestrowanych zmian administracyjnych.</p>` : `
+                            <div class="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                                ${adminLogs.map(al => `
+                                    <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1 text-xs">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <div class="flex items-center gap-2">
+                                                <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px]">${al.category}</span>
+                                                <span class="text-slate-400 text-[11px]">Admin: <strong class="text-white">${al.adminName}</strong></span>
+                                            </div>
+                                            <span class="text-[10px] text-slate-500">${al.date}</span>
+                                        </div>
+                                        <div class="text-slate-200 text-[11px]">${al.description}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+                </div>
             `;
+        }
+
+        function removeHistoricalMatchFromAdmin(idx) {
+            const hm = appState.historicalMatches[idx];
+            if (!hm) return;
+            appState.historicalMatches.splice(idx, 1);
+            logAdminAction('Usunięcie Meczu Archiwalnego', `Usunięto mecz historyczny: ${getUserById(hm.homeId).name} ${hm.homeScore}:${hm.awayScore} ${getUserById(hm.awayId).name}`);
+            saveState();
+            renderAdminTab();
         }
 
         function addHistoricalMatchFromAdmin() {
@@ -3410,6 +4133,7 @@
 
             appState.historicalMatches.unshift({
                 id: 'hm_' + Date.now(),
+                createdAtMs: Date.now(),
                 date: nowStr(),
                 tournamentName: 'Archiwum FIFA',
                 homeId,
@@ -3418,6 +4142,7 @@
                 awayScore: as
             });
 
+            logAdminAction('Dodanie Meczu Archiwalnego', `Dopisano mecz do historii: ${hUser.name} ${hs}:${as} ${aUser.name}`);
             saveState();
             renderAdminTab();
             showToast('Dopisano mecz historyczny i zaktualizowano kursy bramkowe graczy!', 'success');
@@ -3428,7 +4153,12 @@
             if (!bet || bet.status !== 'pending') return;
             bet.status = 'cancelled';
             const u = getUserById(bet.userId);
-            u.points = Math.round((u.points || 0) + Number(bet.stake));
+            const oldPts = u.points || 0;
+            const refund = Math.round(Number(bet.stake));
+            u.points = Math.round(oldPts + refund);
+
+            logBalanceChange(u.id, refund, oldPts, u.points, 'Zwrot Kuponu (Admin)', `Anulowanie kuponu ${bet.type} przez Administratora`);
+            logAdminAction('Anulowanie Kuponu', `Anulowano kupon gracza ${u.name} i zwrócono stawkę ${refund} pkt`);
             saveState();
             renderAdminTab();
             showToast(`Anulowano kupon i zwrócono ${bet.stake} pkt graczowi ${u.name}.`, 'info');
